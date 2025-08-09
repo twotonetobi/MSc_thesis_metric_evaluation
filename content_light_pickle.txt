@@ -1,27 +1,27 @@
 === LIGHT Report ===
-Generated: 2025-08-08T16:31:19.679086
+Generated: 2025-08-09T16:47:37.869440
 
 === LIGHT Pickle Inspection ===
-File: /Users/chetbaker/work/edu_0003_Master_DR/Master_Thesis/assets/evaluation/data/edge_intention/light/AKA_AKA_Junge_Junge_-_Vallut_Bass.pkl
-Size: 777762 bytes
+File: /Users/chetbaker/work/edu_0003_Master_DR/Master_Thesis/assets/evaluation/data/training_data/oscillator_params/DK2020-03-RGZ.pkl
+Size: 3869922 bytes
 
 - Top-level Summary -
-{'dtype': 'float32',
+{'dtype': 'float64',
  'max': 1.0,
- 'mean': 0.3364662826061249,
+ 'mean': 0.1374815953341486,
  'min': 0.0,
- 'sample_values': ['np.float32(0.9908041)',
-                   'np.float32(0.94639987)',
-                   'np.float32(0.96833634)',
-                   'np.float32(0.05739444)',
-                   'np.float32(0.0033324608)',
-                   'np.float32(0.022600723)',
-                   'np.float32(0.010801008)',
-                   'np.float32(0.0166645)',
-                   'np.float32(0.73247397)',
-                   'np.float32(0.97492313)'],
- 'shape': (2700, 72),
- 'std': 0.40647855401039124,
+ 'sample_values': ['np.float64(0.0)',
+                   'np.float64(0.0)',
+                   'np.float64(0.1)',
+                   'np.float64(0.0)',
+                   'np.float64(0.0)',
+                   'np.float64(0.0)',
+                   'np.float64(0.0)',
+                   'np.float64(0.5)',
+                   'np.float64(0.0)',
+                   'np.float64(0.0)'],
+ 'shape': (8062, 60),
+ 'std': 0.25137107299938355,
  'type': 'numpy.ndarray'}
 
 - Heuristic 'tic/tick' Detection -

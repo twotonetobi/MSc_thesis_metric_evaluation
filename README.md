@@ -8,38 +8,76 @@ This repository contains the evaluation framework developed for the master thesi
 *Author: Tobias Wursthorn*  
 *HAW Hamburg, Department of Media Technology, 2025*
 
-This framework implements the quantitative evaluation methodology described in Chapter 3.5 and Chapter 4 of the thesis, specifically designed to assess the structural and temporal correspondence between generated lighting sequences and their driving audio.
+This framework implements the quantitative evaluation methodology described in Chapter 3.5 and Chapter 4 of the thesis, evaluating TWO different generative approaches:
 
-## Purpose
+1. **Intention-Based (Diffusion Model)**: Continuous parameter representation (72-dimensional)
+2. **Oscillator-Based (Conformer Model)**: Function generator approach with wave-type classification (60-dimensional)
 
-This evaluation framework measures how well AI-generated lighting sequences align with musical features across multiple dimensions:
+## Overview
+
+This evaluation framework provides comprehensive metrics for assessing AI-generated lighting sequences across two paradigms:
+
+### A. Intention-Based Evaluation (Diffusion Model)
+Measures structural and temporal correspondence between generated lighting and driving audio:
 - **Structural Coherence**: SSM correlation, novelty detection, boundary alignment
-- **Rhythmic Synchronization**: Beat-to-peak/valley alignment with rhythmic intent detection
+- **Rhythmic Synchronization**: Context-aware beat-to-peak/valley alignment
 - **Dynamic Response**: RMS-brightness and onset-change correlations
 - **Variance Metrics**: Intensity and color variation analysis
 
-The framework operates on the intention-based abstraction layer (72-dimensional lighting representation) as described in Section 3.3.3 of the thesis.
+### B. Oscillator-Based Evaluation (Conformer Model)
+Assesses generative quality without ground truth through:
+- **Plausibility**: Parameter distributions compared to training data
+- **Musical Coherence**: Segment-appropriate patterns and conventions
+- **Internal Consistency**: Stability within segments, dynamics across
+- **Inter-Group Coordination**: Relationships between lighting groups
 
 ## Repository Structure
 
 ```
 evaluation/
 ├── data/
-│   ├── edge_intention/         # Primary dataset (intention-based)
-│   │   ├── audio/              # Audio feature extractions (*.pkl)
-│   │   └── light/              # Lighting intention sequences (*.pkl)
-│   └── beat_configs/           # Tuned parameter configurations
+│   ├── edge_intention/              # Intention-based dataset
+│   │   ├── audio/                   # Audio feature extractions (*.pkl)
+│   │   └── light/                   # Lighting intention sequences (*.pkl)
+│   │
+│   ├── conformer_osci/              # Oscillator-based dataset
+│   │   ├── audio_90s/               # 90-second audio features
+│   │   ├── audio_segments_information_jsons/  # Segment boundaries & BPM
+│   │   └── light_segments/          # Predicted oscillator parameters
+│   │
+│   ├── training_data/               # For oscillator comparison
+│   │   ├── oscillator_params/       # Training data oscillator params
+│   │   └── statistics/              # Pre-computed statistics
+│   │
+│   ├── baselines/                   # Baseline predictions
+│   │   ├── random/                  # Random parameters
+│   │   ├── beat_sync/               # Simple beat-synchronized
+│   │   └── constant/                # Constant parameters
+│   │
+│   └── beat_configs/                # Tuned parameter configurations
+│
 ├── scripts/
-│   ├── structural_evaluator.py # Core evaluation metrics implementation
-│   ├── evaluate_dataset.py     # Dataset-wide evaluation runner
-│   ├── evaluate_dataset_with_tuned_params.py # Evaluation with tuned parameters
-│   ├── enhanced_tuner.py       # Interactive GUI for parameter tuning
-│   ├── visualizer.py           # Plotting utilities
-│   └── generate_final_plots.py # Summary visualization generator
-├── outputs/                    # Generated results (created on first run)
-├── extracted_formulas_intention_based.md  # Formulas reference
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+│   ├── # Intention-based evaluation
+│   ├── structural_evaluator.py      # Core metrics for intention-based
+│   ├── evaluate_dataset.py          # Dataset-wide evaluation runner
+│   ├── evaluate_dataset_with_tuned_params.py  # With tuned parameters
+│   ├── enhanced_tuner.py            # Interactive GUI for parameter tuning
+│   ├── visualizer.py                # Plotting utilities
+│   ├── generate_final_plots.py      # Summary visualization generator
+│   │
+│   ├── # Oscillator-based evaluation
+│   ├── oscillator_evaluator.py      # Core metrics for oscillator-based
+│   ├── training_stats_extractor.py  # Extract training data statistics
+│   ├── baseline_generators.py       # Generate baseline predictions
+│   ├── inter_group_analyzer.py      # Analyze inter-group correlations
+│   └── oscillator_report_generator.py  # Generate comprehensive report
+│
+├── outputs/                         # Intention-based results
+├── outputs_oscillator/              # Oscillator-based results
+├── extracted_formulas_intention_based.md  # Mathematical formulas
+├── requirements.txt                 # Python dependencies
+├── LICENSE                          # Usage restrictions
+└── README.md                        # This file
 ```
 
 ## Installation & Setup
@@ -70,24 +108,32 @@ pip install -r requirements.txt
 ### 3. Verify Installation
 
 ```bash
-# Test that the evaluator loads correctly
+# Test that the evaluators load correctly
 python scripts/structural_evaluator.py
+python scripts/oscillator_evaluator.py
 ```
 
-## Usage
+## Evaluation Workflows
 
-### Quick Start: Run Evaluation with Default Parameters
+### Part A: Intention-Based Evaluation (Diffusion Model)
+
+This evaluates the 72-dimensional continuous representation from the diffusion model.
+
+#### Quick Start (Default Parameters)
 
 ```bash
-# Evaluate the entire dataset
+# Evaluate the entire dataset with default parameters
 python scripts/evaluate_dataset.py \
     --data_dir data/edge_intention \
     --output_dir outputs
+
+# Generate summary visualizations
+python scripts/generate_final_plots.py
 ```
 
-### Advanced: Interactive Parameter Tuning
+#### Advanced: Parameter Tuning
 
-The framework includes an interactive GUI for tuning evaluation parameters to your specific dataset:
+For optimal results, tune the evaluation parameters using the interactive GUI:
 
 ```bash
 # Launch the interactive tuner
@@ -95,43 +141,134 @@ python scripts/enhanced_tuner.py
 ```
 
 This allows you to:
-- Load audio/light pairs and visualize their correspondence
+- Load audio/light pairs and visualize correspondence
 - Adjust rhythmic detection thresholds
 - Fine-tune beat alignment parameters
 - Save optimized configurations
 
-### Run Evaluation with Tuned Parameters
-
-After tuning, use your saved configuration:
+#### Evaluation with Tuned Parameters
 
 ```bash
-# Use tuned parameters for evaluation
+# Use your tuned configuration
 python scripts/evaluate_dataset_with_tuned_params.py \
     data/beat_configs/your_config.json \
     --data_dir data/edge_intention \
     --output_dir outputs_tuned
 ```
 
-### Generate Summary Visualizations
+### Part B: Oscillator-Based Evaluation (Conformer Model)
+
+This evaluates the 60-dimensional oscillator parameters (3 groups × 20 params) from the conformer model.
+
+#### Step 1: Extract Training Statistics (Run Once)
+
+First, extract statistics from your training data to establish baselines:
 
 ```bash
-# Create metric distribution plots and correlation heatmaps
-python scripts/generate_final_plots.py
+python scripts/training_stats_extractor.py \
+    --training_dir /path/to/your/training/oscillator/data \
+    --segment_dir data/conformer_osci/audio_segments_information_jsons \
+    --output_dir data/training_data/statistics
+```
+
+This creates distributions and conventions from your training set for comparison.
+
+#### Step 2: Generate Baseline Predictions
+
+Create simple baseline predictions for comparison:
+
+```bash
+python scripts/baseline_generators.py \
+    --audio_dir data/conformer_osci/audio_segments_information_jsons \
+    --stats_path data/training_data/statistics/parameter_distributions.pkl \
+    --output_dir data/baselines
+```
+
+This generates three baseline types:
+- **Random**: Parameters sampled from training distributions
+- **Beat-sync**: Simple on-beat flashing patterns
+- **Constant**: Static, unchanging parameters
+
+#### Step 3: Evaluate Model Predictions
+
+Evaluate your conformer model's predictions:
+
+```bash
+python scripts/oscillator_evaluator.py \
+    --pred_dir data/conformer_osci/light_segments \
+    --audio_dir data/conformer_osci/audio_segments_information_jsons \
+    --stats_path data/training_data/statistics/parameter_distributions.pkl \
+    --output_dir outputs_oscillator
+```
+
+#### Step 4: Evaluate Baselines for Comparison
+
+Run the same evaluation on baselines:
+
+```bash
+# Evaluate random baseline
+python scripts/oscillator_evaluator.py \
+    --pred_dir data/baselines/random \
+    --audio_dir data/conformer_osci/audio_segments_information_jsons \
+    --output_dir outputs_oscillator/baselines/random
+
+# Evaluate beat-sync baseline
+python scripts/oscillator_evaluator.py \
+    --pred_dir data/baselines/beat_sync \
+    --audio_dir data/conformer_osci/audio_segments_information_jsons \
+    --output_dir outputs_oscillator/baselines/beat_sync
+
+# Evaluate constant baseline
+python scripts/oscillator_evaluator.py \
+    --pred_dir data/baselines/constant \
+    --audio_dir data/conformer_osci/audio_segments_information_jsons \
+    --output_dir outputs_oscillator/baselines/constant
+```
+
+#### Step 5: Analyze Inter-Group Correlations
+
+Examine how the three lighting groups coordinate:
+
+```bash
+python scripts/inter_group_analyzer.py \
+    --pred_dir data/conformer_osci/light_segments \
+    --output_dir outputs_oscillator/inter_group
+```
+
+#### Step 6: Generate Comprehensive Report
+
+Combine all analyses into a final report:
+
+```bash
+python scripts/oscillator_report_generator.py \
+    --model_dir outputs_oscillator \
+    --baseline_dir outputs_oscillator/baselines \
+    --output_path outputs_oscillator/reports/final_report.md
 ```
 
 ## Output Files
 
-The evaluation generates several types of outputs:
+### Intention-Based Outputs
 
-- `outputs/reports/metrics.csv` - Per-file metric results
-- `outputs/reports/evaluation_report.md` - Comprehensive markdown report
-- `outputs/plots/ssm/` - Self-similarity matrix visualizations
-- `outputs/plots/novelty/` - Novelty function comparisons
-- `outputs/plots/metrics/` - Summary statistics and distributions
+Located in `outputs/`:
+- `reports/metrics.csv` - Per-file metric results
+- `reports/evaluation_report.md` - Comprehensive markdown report
+- `plots/ssm/` - Self-similarity matrix visualizations
+- `plots/novelty/` - Novelty function comparisons
+- `plots/metrics/` - Summary statistics and distributions
+
+### Oscillator-Based Outputs
+
+Located in `outputs_oscillator/`:
+- `metrics/` - Parameter distribution comparisons
+- `plots/wave_distributions.png` - Wave type usage by segment
+- `plots/parameter_comparison.png` - Parameter statistics across segments
+- `inter_group/` - Inter-group correlation analyses
+- `reports/final_report.md` - Comprehensive evaluation report
 
 ## Evaluation Metrics
 
-The framework computes the following metrics (as defined in Section 3.5.2 of the thesis):
+### Intention-Based Metrics (72-dim continuous)
 
 | Metric | Symbol | Description |
 |--------|--------|-------------|
@@ -145,107 +282,58 @@ The framework computes the following metrics (as defined in Section 3.5.2 of the
 | Intensity Variance | Ψ_intensity | Variation in lighting intensity |
 | Color Variance | Ψ_color | Variation in color parameters |
 
-## Data Format
+### Oscillator-Based Metrics (60-dim wave parameters)
 
-### Audio Features (pickle format)
-- `chroma_stft`: Chroma features for harmonic content
-- `onset_beat`: Binary beat positions
-- `onset_env`: Onset strength envelope
-- `rms` or `melspe_db`: Energy/loudness features
+| Metric | Description |
+|--------|-------------|
+| Parameter Plausibility | Distribution similarity to training data (KL divergence) |
+| Wave Type Convention | Adherence to learned segment-wave associations |
+| Segment Consistency | Parameter stability within musical segments |
+| Inter-Group Correlation | Coordination between 3 lighting groups |
+| MAI (Movement Activity) | Combined pan/tilt activity measure |
+| Baseline Comparison | Performance vs random/simple approaches |
 
-### Lighting Features (pickle format)
-- NumPy array of shape `(T, 72)` where T = time frames
-- 72 dimensions = 12 groups × 6 parameters per group
-- Parameters: intensity peak, slope, density, minima, hue, saturation
+## Data Formats
 
----
+### Intention-Based Format
+- **Audio**: Pickle files with feature dictionaries (chroma_stft, onset_beat, etc.)
+- **Light**: NumPy arrays of shape `(T, 72)` where T = time frames
+  - 72 dims = 12 groups × 6 parameters (intensity, position, density, minima, hue, saturation)
 
-## COPYRIGHT NOTICE & DATA USAGE
+### Oscillator-Based Format
+- **Audio**: 90-second segments with JSON metadata (BPM, beats, segments)
+- **Light**: NumPy arrays of shape `(2700, 60)` for 90s at 30fps
+  - 60 dims = 3 groups × 20 params (10 standard + 10 highlight)
+  - Parameters: pan/tilt activity, wave types, frequency, amplitude, offset, phase, hue, saturation
 
-### Audio Feature Extractions
+### Wave Type Mappings (Oscillator)
 
-This repository contains **audio feature extractions** (not original audio files) derived from copyrighted musical works. These extractions are:
+**Wave Type A:**
+- sine: 0.1
+- saw_up: 0.3
+- saw_down: 0.5
+- square: 0.7
+- linear: 0.9
 
-1. **Transformative**: The data consists solely of numerical feature representations (MFCCs, chroma, beat positions, etc.) that cannot be used to reconstruct the original audio
-2. **For Scientific Research**: Used exclusively for academic research purposes as part of a master thesis
-3. **Non-Commercial**: Not intended for any commercial use or distribution
-4. **Educational Fair Use**: Provided to enable reproducibility and understanding of the evaluation methodology
-
-The author (Tobias Wursthorn) has legally obtained the original audio content through commercial purchases. The feature extractions are shared here solely to:
-- Enable scientific reproducibility of the thesis results
-- Allow understanding of the evaluation pipeline
-- Facilitate academic peer review
-
-### Lighting Data
-
-The lighting control data represents original creative work by professional lighting designers who have provided their data under strict non-disclosure agreements (NDAs) with guaranteed anonymity. This data is:
-- Proprietary intellectual property of the respective designers
-- Shared only in abstracted form (intention layer)
-- Not to be used for any commercial purposes
-- Subject to the licensing terms below
-
----
-
-## LICENSE & USAGE RESTRICTIONS
-
-### Scientific Research License
-
-This evaluation framework and associated data are released under the following terms:
-
-**Permitted Uses:**
-- Academic and scientific research
-- Educational purposes in academic institutions
-- Reproducibility studies of the thesis results
-- Non-commercial evaluation of music-to-light generation systems
-
-**Prohibited Uses:**
-- Any commercial use or application
-- Training machine learning models for commercial products
-- Redistribution of the data without explicit permission
-- Reverse engineering to identify anonymous contributors
-- Any use that violates copyright or intellectual property rights
-
-**Attribution Requirement:**
-Any use of this framework or data must cite:
-```
-Wursthorn, T. (2025). "Generative Synthesis of Music-Driven Light Shows: 
-A Framework for Co-Creative Stage Lighting." Master Thesis, 
-HAW Hamburg, Department of Media Technology.
-```
-
-**Data Access:**
-For access to the full dataset or any questions regarding usage, please contact:
-- Author: Tobias Wursthorn
-- Institution: HAW Hamburg
-- [tobias.wursthorn@haw-hamburg.de](mailto:tobias.wursthorn@haw-hamburg.de)
-
-### Third-Party Components
-
-This framework uses open-source libraries (numpy, scipy, pandas, matplotlib, etc.) under their respective licenses. See `requirements.txt` for the complete list.
-
----
-
-## Technical Requirements
-
-- Python 3.8 or higher
-- 4GB RAM minimum (8GB recommended for large datasets)
-- Storage: ~500MB for code and example data
+**Wave Type B:**
+- other: 0.125
+- plateau: 0.375
+- gaussian_single: 0.625
+- gaussian_double: 0.875
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Import errors**: Ensure all packages from `requirements.txt` are installed
-2. **Memory errors**: Reduce batch size or downsample data
-3. **No light file found**: Check that light pickle filenames contain the audio file stem
-4. **mir_eval missing**: Install separately with `pip install mir_eval` if needed
+2. **Memory errors**: Reduce batch size or process fewer files at once
+3. **Missing files**: Check that light pickle filenames match audio file stems
+4. **No training data**: For oscillator evaluation, you must first extract training statistics
 
-### Parameter Tuning Tips
+### Data Requirements
 
-- Start with the default configuration
-- Use the interactive tuner on representative samples
-- Rhythmic threshold typically ranges from 0.03-0.08
-- Beat sigma of 0.5 works well for most genres
+- **Intention-based**: Requires paired audio/light pickles with matching stems
+- **Oscillator-based**: Requires 90s segments with corresponding JSON metadata
 
 ## Citation
 
@@ -261,15 +349,19 @@ If you use this evaluation framework in your research, please cite:
 }
 ```
 
+## License & Usage
+
+This framework is provided for SCIENTIFIC and EDUCATIONAL purposes only. See LICENSE file for full restrictions.
+
 ## Acknowledgments
 
 This work was supported by:
 - Prof. Dr. Larissa Putzar (Primary Supervisor)
 - Prof. Dr. Kai von Luck (Secondary Supervisor)
-- The anonymous lighting designers who provided their creative work for research
+- Anonymous lighting designers who provided training data
 - MA Lighting (https://www.malighting.com/)
-- The open-source community for the essential libraries used in this framework
+- The open-source community for essential libraries
 
 ---
 
-**Note**: This is research software. While efforts have been made to ensure correctness, it is provided as-is for academic purposes.
+**Note**: This is research software provided as-is for academic purposes. The evaluation framework demonstrates two complementary approaches to lighting generation evaluation, each suited to its respective model architecture.
