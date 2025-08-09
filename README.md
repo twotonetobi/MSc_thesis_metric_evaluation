@@ -37,7 +37,7 @@ evaluation/
 │   ├── visualizer.py           # Plotting utilities
 │   └── generate_final_plots.py # Summary visualization generator
 ├── outputs/                    # Generated results (created on first run)
-├── formulas/                   # Mathematical formulas documentation
+├── extracted_formulas_intention_based.md  # Formulas reference
 ├── requirements.txt            # Python dependencies
 └── README.md                   # This file
 ```
