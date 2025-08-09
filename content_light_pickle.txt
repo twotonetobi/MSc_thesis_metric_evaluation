@@ -1,0 +1,29 @@
+=== LIGHT Report ===
+Generated: 2025-08-08T16:31:19.679086
+
+=== LIGHT Pickle Inspection ===
+File: /Users/chetbaker/work/edu_0003_Master_DR/Master_Thesis/assets/evaluation/data/edge_intention/light/AKA_AKA_Junge_Junge_-_Vallut_Bass.pkl
+Size: 777762 bytes
+
+- Top-level Summary -
+{'dtype': 'float32',
+ 'max': 1.0,
+ 'mean': 0.3364662826061249,
+ 'min': 0.0,
+ 'sample_values': ['np.float32(0.9908041)',
+                   'np.float32(0.94639987)',
+                   'np.float32(0.96833634)',
+                   'np.float32(0.05739444)',
+                   'np.float32(0.0033324608)',
+                   'np.float32(0.022600723)',
+                   'np.float32(0.010801008)',
+                   'np.float32(0.0166645)',
+                   'np.float32(0.73247397)',
+                   'np.float32(0.97492313)'],
+ 'shape': (2700, 72),
+ 'std': 0.40647855401039124,
+ 'type': 'numpy.ndarray'}
+
+- Heuristic 'tic/tick' Detection -
+No tic/tick-like structures detected by heuristics.
+Done.
