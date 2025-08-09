@@ -1,0 +1,38 @@
+SCIENTIFIC RESEARCH LICENSE
+
+Copyright (c) 2025 Tobias Wursthorn, HAW Hamburg
+
+This evaluation framework and associated data ("Software and Data") are provided 
+for SCIENTIFIC and EDUCATIONAL purposes only.
+
+PERMITTED USES:
+1. Academic and scientific research
+2. Educational use in academic institutions  
+3. Reproducibility studies of the associated thesis
+4. Non-commercial evaluation and benchmarking
+
+PROHIBITED USES:
+1. Any commercial use or application
+2. Training models for commercial products or services
+3. Redistribution without explicit written permission
+4. Attempts to de-anonymize contributors
+5. Any use violating third-party intellectual property rights
+
+CONDITIONS:
+- Attribution: Any use must cite the original thesis:
+  Wursthorn, T. (2025). "Generative Synthesis of Music-Driven Light Shows: 
+  A Framework for Co-Creative Stage Lighting." Master Thesis, HAW Hamburg.
+
+- Data Access: The included feature extractions are transformative representations
+  for research purposes only. Original copyrighted content has been legally obtained
+  by the author.
+
+- Privacy: The anonymity of data contributors must be preserved.
+
+DISCLAIMER:
+THE SOFTWARE AND DATA ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+EXPRESS OR IMPLIED. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, 
+DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE OR DATA.
+
+For questions about usage or to request additional permissions, contact:
+Tobias Wursthorn - HAW Hamburg, Department of Media Technology

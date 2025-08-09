@@ -1,134 +1,275 @@
-# Intention-Based Audio–Light Evaluation
+# Evaluation Framework for Music-Driven Light Show Generation
 
-This README provides step-by-step instructions to run the intention-based evaluation for audio–lighting correspondence using the scripts in `assets/evaluation/`.
+## Master Thesis Context
 
-It covers environment setup, dependencies, how to run the evaluation over the dataset, and how to generate the summary plots and report.
+This repository contains the evaluation framework developed for the master thesis:
 
-## Repository Layout (relevant)
+**"Generative Synthesis of Music-Driven Light Shows: A Framework for Co-Creative Stage Lighting"**  
+*Author: Tobias Wursthorn*  
+*HAW Hamburg, Department of Media Technology, 2025*
 
-- `assets/evaluation/`
-  - `data/edge_intention/`
-    - `audio/` — audio feature pickles (`*.pkl`)
-    - `light/` — lighting intention pickles (`*.pkl`)
-  - `scripts/`
-    - `structural_evaluator.py` — core evaluator (metrics + SSM/novelty/boundaries)
-    - `evaluate_dataset.py` — runs evaluation over all pairs and saves outputs
-    - `visualizer.py` — plotting utilities for SSM and novelty comparisons
-    - `generate_final_plots.py` — creates boxplot and correlation heatmap summaries
-    - `inspect_pickle_audio.py`, `inspect_pickle_light.py` — pickle inspectors (optional)
-  - `outputs/` (created on first run)
-    - `plots/ssm/`, `plots/novelty/`, `plots/metrics/`
-    - `reports/metrics.csv`, `reports/metrics.json`, `reports/evaluation_report.md`
-  - `formulas/intention_eval_formulas.md` — summary of the formulas used
-  - `extracted_formulas_intention_based.md` — your original formulas document
+This framework implements the quantitative evaluation methodology described in Chapter 3.5 and Chapter 4 of the thesis, specifically designed to assess the structural and temporal correspondence between generated lighting sequences and their driving audio.
 
-## 1) Virtual Environment
+## Purpose
 
-A dedicated venv exists at:
+This evaluation framework measures how well AI-generated lighting sequences align with musical features across multiple dimensions:
+- **Structural Coherence**: SSM correlation, novelty detection, boundary alignment
+- **Rhythmic Synchronization**: Beat-to-peak/valley alignment with rhythmic intent detection
+- **Dynamic Response**: RMS-brightness and onset-change correlations
+- **Variance Metrics**: Intensity and color variation analysis
 
-- `assets/evaluation/.venv/`
+The framework operates on the intention-based abstraction layer (72-dimensional lighting representation) as described in Section 3.3.3 of the thesis.
 
-Activate if desired, or call the Python/pip binaries explicitly via `.venv/bin/...` (used below).
+## Repository Structure
 
-## 2) Install Dependencies
-
-Install the required packages into the venv:
-
-```bash
-# From: assets/evaluation/
-.venv/bin/pip install numpy scipy pandas matplotlib seaborn librosa mir_eval
+```
+evaluation/
+├── data/
+│   ├── edge_intention/         # Primary dataset (intention-based)
+│   │   ├── audio/              # Audio feature extractions (*.pkl)
+│   │   └── light/              # Lighting intention sequences (*.pkl)
+│   └── beat_configs/           # Tuned parameter configurations
+├── scripts/
+│   ├── structural_evaluator.py # Core evaluation metrics implementation
+│   ├── evaluate_dataset.py     # Dataset-wide evaluation runner
+│   ├── evaluate_dataset_with_tuned_params.py # Evaluation with tuned parameters
+│   ├── enhanced_tuner.py       # Interactive GUI for parameter tuning
+│   ├── visualizer.py           # Plotting utilities
+│   └── generate_final_plots.py # Summary visualization generator
+├── outputs/                    # Generated results (created on first run)
+├── formulas/                   # Mathematical formulas documentation
+├── requirements.txt            # Python dependencies
+└── README.md                   # This file
 ```
 
-Notes:
-- If `mir_eval` fails to install on your system, the scripts will still run; boundary F-score will gracefully fall back to `0.0`.
-- `numpy` is already present in the venv from earlier steps.
+## Installation & Setup
 
-## 3) Data Expectations
-
-- Audio pickles live in: `assets/evaluation/data/edge_intention/audio/`
-- Light pickles live in: `assets/evaluation/data/edge_intention/light/`
-- Each audio file is matched to a light file by prefix/stem (the evaluator searches for `light/**/<audio_stem>*.pkl`).
-
-Minimum keys expected in audio pickles (if present they will be used):
-- `chroma_stft` — for audio SSM and novelty
-- `onset_env` — for onset↔light-change correlation
-- `onset_beat` — for beat alignment
-- Optional: `rms` or `melspe_db` — used to compute RMS↔brightness correlation
-
-Light pickles are expected to be NumPy arrays shaped `(T, 72)` with 12 groups × 6 parameters; parameter 1 in each group is “intensity peak”.
-
-## 4) Run the Evaluation
-
-This aggregates all metrics and saves plots and a report.
+### 1. Create Virtual Environment
 
 ```bash
-# Use the saved configuration
-python scripts/evaluate_dataset_with_tuned_params.py data/beat_configs/evaluator_config_20250808_185625.json \
+# Navigate to the evaluation directory
+cd evaluation/
+
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate virtual environment
+# On Linux/Mac:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+```
+
+### 2. Install Dependencies
+
+```bash
+# Install all required packages
+pip install -r requirements.txt
+```
+
+### 3. Verify Installation
+
+```bash
+# Test that the evaluator loads correctly
+python scripts/structural_evaluator.py
+```
+
+## Usage
+
+### Quick Start: Run Evaluation with Default Parameters
+
+```bash
+# Evaluate the entire dataset
+python scripts/evaluate_dataset.py \
     --data_dir data/edge_intention \
     --output_dir outputs
 ```
 
-Outputs created:
-- `outputs/reports/metrics.csv` and `metrics.json` — per-file metrics
-- `outputs/reports/evaluation_report.md` — summary report
-- `outputs/plots/ssm/*` — side-by-side SSM and difference plots
-- `outputs/plots/novelty/*` — novelty functions with boundary markers
+### Advanced: Interactive Parameter Tuning
 
-## 5) Generate Final Summary Plots
-
-Create a metric distribution boxplot and correlation heatmap from the metrics CSV:
+The framework includes an interactive GUI for tuning evaluation parameters to your specific dataset:
 
 ```bash
-# From: assets/evaluation/
-.venv/bin/python scripts/generate_final_plots.py
+# Launch the interactive tuner
+python scripts/enhanced_tuner.py
 ```
 
-Outputs created:
-- `outputs/plots/metrics/summary_boxplot.png`
-- `outputs/plots/metrics/correlation_heatmap.png`
+This allows you to:
+- Load audio/light pairs and visualize their correspondence
+- Adjust rhythmic detection thresholds
+- Fine-tune beat alignment parameters
+- Save optimized configurations
 
-## 6) What the Evaluator Computes
+### Run Evaluation with Tuned Parameters
 
-Implemented in `scripts/structural_evaluator.py` (see also `formulas/intention_eval_formulas.md`):
-
-- **SSM correlation (Γ_structure)**: similarity between audio and light SSMs
-- **Novelty correlation (Γ_novelty)**: correlation of novelty curves (edge-trimmed)
-- **Boundary F-score (Γ_boundary)**: via `mir_eval.segment.detection` (if available)
-- **RMS↔brightness (Γ_loud↔bright)**
-- **Onset↔change (Γ_change)**
-- **Beat↔peak / Beat↔valley alignment**
-- **Variance metrics (Ψ_intensity, Ψ_color)**
-
-Defaults (align with formulas):
-- `L_kernel=31`, `L_smooth=81`, `H=10`, `beat_align_sigma=0.5`
-- `rms_window_size=120`, `onset_window_size=120`
-- `peak_distance=15`, `peak_prominence=0.04`
-- `boundary_window=2.0`, `fps=30`
-
-## 7) Inspecting Pickle Structure (optional)
-
-If you need to inspect raw pickle contents quickly:
+After tuning, use your saved configuration:
 
 ```bash
-# Light pickle (LIGHT-only report)
-.venv/bin/python scripts/inspect_pickle_light.py \
-  "data/edge_intention/light/<your_light_file>.pkl" --out content_light_pickle.txt
-
-# Audio pickle
-.venv/bin/python scripts/inspect_pickle_audio.py \
-  "data/edge_intention/audio/<your_audio_file>.pkl" --out content_audio_pickle.txt
+# Use tuned parameters for evaluation
+python scripts/evaluate_dataset_with_tuned_params.py \
+    data/beat_configs/your_config.json \
+    --data_dir data/edge_intention \
+    --output_dir outputs_tuned
 ```
 
-Reports will be written to `assets/evaluation/` with normalized filenames.
+### Generate Summary Visualizations
 
-## 8) Troubleshooting
+```bash
+# Create metric distribution plots and correlation heatmaps
+python scripts/generate_final_plots.py
+```
 
-- **Missing packages**: run the pip install command in Section 2.
-- **No light match found**: ensure the light filename contains the audio stem; evaluator matches using `<stem>*.pkl` under `light/` subfolders.
-- **Large memory for SSM**: the evaluator downsamples features (`H=10`) and smooths to reduce matrix size.
-- **mir_eval missing**: boundary metrics default to 0; install `mir_eval` if you need them.
+## Output Files
 
-## 9) References
+The evaluation generates several types of outputs:
 
-- Formulas reference: `assets/evaluation/formulas/intention_eval_formulas.md`
-- Original formulas document: `assets/evaluation/extracted_formulas_intention_based.md`
+- `outputs/reports/metrics.csv` - Per-file metric results
+- `outputs/reports/evaluation_report.md` - Comprehensive markdown report
+- `outputs/plots/ssm/` - Self-similarity matrix visualizations
+- `outputs/plots/novelty/` - Novelty function comparisons
+- `outputs/plots/metrics/` - Summary statistics and distributions
+
+## Evaluation Metrics
+
+The framework computes the following metrics (as defined in Section 3.5.2 of the thesis):
+
+| Metric | Symbol | Description |
+|--------|--------|-------------|
+| SSM Correlation | Γ_structure | Structural correspondence via self-similarity |
+| Novelty Correlation | Γ_novelty | Alignment of structural transitions |
+| Boundary F-Score | Γ_boundary | Musical segment boundary detection |
+| RMS↔Brightness | Γ_loud↔bright | Audio energy to lighting intensity |
+| Onset↔Change | Γ_change | Musical onsets to lighting changes |
+| Beat↔Peak | Γ_beat↔peak | Beat alignment with intensity peaks |
+| Beat↔Valley | Γ_beat↔valley | Beat alignment with intensity valleys |
+| Intensity Variance | Ψ_intensity | Variation in lighting intensity |
+| Color Variance | Ψ_color | Variation in color parameters |
+
+## Data Format
+
+### Audio Features (pickle format)
+- `chroma_stft`: Chroma features for harmonic content
+- `onset_beat`: Binary beat positions
+- `onset_env`: Onset strength envelope
+- `rms` or `melspe_db`: Energy/loudness features
+
+### Lighting Features (pickle format)
+- NumPy array of shape `(T, 72)` where T = time frames
+- 72 dimensions = 12 groups × 6 parameters per group
+- Parameters: intensity peak, slope, density, minima, hue, saturation
+
+---
+
+## COPYRIGHT NOTICE & DATA USAGE
+
+### Audio Feature Extractions
+
+This repository contains **audio feature extractions** (not original audio files) derived from copyrighted musical works. These extractions are:
+
+1. **Transformative**: The data consists solely of numerical feature representations (MFCCs, chroma, beat positions, etc.) that cannot be used to reconstruct the original audio
+2. **For Scientific Research**: Used exclusively for academic research purposes as part of a master thesis
+3. **Non-Commercial**: Not intended for any commercial use or distribution
+4. **Educational Fair Use**: Provided to enable reproducibility and understanding of the evaluation methodology
+
+The author (Tobias Wursthorn) has legally obtained the original audio content through commercial purchases. The feature extractions are shared here solely to:
+- Enable scientific reproducibility of the thesis results
+- Allow understanding of the evaluation pipeline
+- Facilitate academic peer review
+
+### Lighting Data
+
+The lighting control data represents original creative work by professional lighting designers who have provided their data under strict non-disclosure agreements (NDAs) with guaranteed anonymity. This data is:
+- Proprietary intellectual property of the respective designers
+- Shared only in abstracted form (intention layer)
+- Not to be used for any commercial purposes
+- Subject to the licensing terms below
+
+---
+
+## LICENSE & USAGE RESTRICTIONS
+
+### Scientific Research License
+
+This evaluation framework and associated data are released under the following terms:
+
+**Permitted Uses:**
+- Academic and scientific research
+- Educational purposes in academic institutions
+- Reproducibility studies of the thesis results
+- Non-commercial evaluation of music-to-light generation systems
+
+**Prohibited Uses:**
+- Any commercial use or application
+- Training machine learning models for commercial products
+- Redistribution of the data without explicit permission
+- Reverse engineering to identify anonymous contributors
+- Any use that violates copyright or intellectual property rights
+
+**Attribution Requirement:**
+Any use of this framework or data must cite:
+```
+Wursthorn, T. (2025). "Generative Synthesis of Music-Driven Light Shows: 
+A Framework for Co-Creative Stage Lighting." Master Thesis, 
+HAW Hamburg, Department of Media Technology.
+```
+
+**Data Access:**
+For access to the full dataset or any questions regarding usage, please contact:
+- Author: Tobias Wursthorn
+- Institution: HAW Hamburg
+- [tobias.wursthorn@haw-hamburg.de](mailto:tobias.wursthorn@haw-hamburg.de)
+
+### Third-Party Components
+
+This framework uses open-source libraries (numpy, scipy, pandas, matplotlib, etc.) under their respective licenses. See `requirements.txt` for the complete list.
+
+---
+
+## Technical Requirements
+
+- Python 3.8 or higher
+- 4GB RAM minimum (8GB recommended for large datasets)
+- Storage: ~500MB for code and example data
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Import errors**: Ensure all packages from `requirements.txt` are installed
+2. **Memory errors**: Reduce batch size or downsample data
+3. **No light file found**: Check that light pickle filenames contain the audio file stem
+4. **mir_eval missing**: Install separately with `pip install mir_eval` if needed
+
+### Parameter Tuning Tips
+
+- Start with the default configuration
+- Use the interactive tuner on representative samples
+- Rhythmic threshold typically ranges from 0.03-0.08
+- Beat sigma of 0.5 works well for most genres
+
+## Citation
+
+If you use this evaluation framework in your research, please cite:
+
+```bibtex
+@mastersthesis{wursthorn2025generative,
+  title={Generative Synthesis of Music-Driven Light Shows: 
+         A Framework for Co-Creative Stage Lighting},
+  author={Wursthorn, Tobias},
+  year={2025},
+  school={HAW Hamburg, Department of Media Technology}
+}
+```
+
+## Acknowledgments
+
+This work was supported by:
+- Prof. Dr. Larissa Putzar (Primary Supervisor)
+- Prof. Dr. Kai von Luck (Secondary Supervisor)
+- The anonymous lighting designers who provided their creative work for research
+- MA Lighting (https://www.malighting.com/)
+- The open-source community for the essential libraries used in this framework
+
+---
+
+**Note**: This is research software. While efforts have been made to ensure correctness, it is provided as-is for academic purposes.

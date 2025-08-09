@@ -25,3 +25,6 @@ outputs/
 # Cache / logs
 *.log
 .cache/
+
+# Exclude removed legacy code
+legacy_code/
