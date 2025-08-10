@@ -1,0 +1,11 @@
+{
+  "num_files": 315,
+  "failed_files": 1,
+  "aggregate_metrics": {
+    "avg_consistency": 0.5925925925925926,
+    "avg_coherence": 0.7322751322751322,
+    "avg_smoothness": 0.5555555555555556,
+    "avg_distribution_match": 0.8344770975056688,
+    "avg_overall_score": 0.6787250944822373
+  }
+}

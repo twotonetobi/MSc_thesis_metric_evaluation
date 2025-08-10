@@ -170,6 +170,67 @@ class FullEvaluationWorkflow:
                 self.log("✅ Hybrid evaluation complete")
         
         return success
+
+    def run_quality_based_comparison(self) -> bool:
+        """Run quality-based ground truth comparison (new paradigm)."""
+        
+        self.log("\n" + "="*60)
+        self.log("3️⃣ QUALITY-BASED GROUND TRUTH COMPARISON")
+        self.log("="*60)
+        
+        # Import the new comparator
+        from quality_based_comparator import QualityBasedComparator
+        from run_evaluation_pipeline import EvaluationPipeline
+        
+        # Check if ground truth data exists
+        gt_audio = self.data_dir / 'audio_ground_truth'
+        gt_light = self.data_dir / 'light_ground_truth'
+        
+        if not gt_audio.exists() or not gt_light.exists():
+            self.log("⚠️  Skipping - ground truth data not found")
+            return True
+        
+        # Create quality comparison output directory
+        quality_output = self.output_dir / 'quality_comparison'
+        quality_output.mkdir(exist_ok=True)
+        
+        # Run evaluations
+        pipeline = EvaluationPipeline(verbose=False)
+        
+        df_gen = pipeline.run_evaluation(
+            audio_dir=self.data_dir / 'audio',
+            light_dir=self.data_dir / 'light',
+            output_csv=quality_output / 'generated_metrics.csv'
+        )
+        
+        df_gt = pipeline.run_evaluation(
+            audio_dir=gt_audio,
+            light_dir=gt_light,
+            output_csv=quality_output / 'ground_truth_metrics.csv'
+        )
+        
+        # Run quality comparison
+        comparator = QualityBasedComparator(self.data_dir, quality_output)
+        
+        overall_score = comparator.create_quality_achievement_dashboard(
+            df_gen, df_gt, 
+            quality_output / 'quality_achievement_dashboard.png'
+        )
+        
+        comparator.generate_quality_report(
+            df_gen, df_gt,
+            quality_output / 'quality_comparison_report.md'
+        )
+        
+        self.log(f"✅ Quality comparison complete: {overall_score:.1%} achievement")
+        
+        # Store results
+        self.results['quality_comparison'] = {
+            'overall_score': overall_score,
+            'paradigm': 'quality_achievement'
+        }
+        
+        return True
     
     def run_ground_truth_comparison(self) -> bool:
         """Run ground-truth comparison."""
@@ -379,8 +440,8 @@ class FullEvaluationWorkflow:
             success = False
         
         # 3. Ground-truth comparison (if data exists)
-        if not self.run_ground_truth_comparison():
-            self.log("⚠️  Ground-truth comparison failed")
+        if not self.run_quality_based_comparison():
+            self.log("⚠️  Quality-based comparison failed")
             success = False
         
         # 4. Generate final report
