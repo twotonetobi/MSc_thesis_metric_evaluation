@@ -1,0 +1,44 @@
+EVALUATION FRAMEWORK CLEANUP SUMMARY
+=====================================
+Date: $(date)
+
+KEPT SCRIPTS (Active):
+----------------------
+Intention-based:
+- structural_evaluator.py
+- evaluate_dataset.py
+- evaluate_dataset_with_tuned_params.py
+- enhanced_tuner.py
+- visualizer.py
+- generate_final_plots.py
+
+Hybrid Wave Type:
+- wave_type_reconstructor.py
+- boundary_tuner.py
+- custom_boundary_config.py
+
+Utilities:
+- inspect_pickle_audio.py
+- inspect_pickle_light.py
+
+MOVED TO DEPRECATED:
+--------------------
+- oscillator_evaluator.py (needs rewrite for hybrid)
+- baseline_generators.py (needs update)
+- inter_group_analyzer.py (needs update)
+- oscillator_report_generator.py (needs update)
+- training_stats_extractor.py (needs update)
+- compute_model_stats.py (not needed)
+- diagnostic_checker.py (debug tool, not needed)
+
+NEW PLACEHOLDERS CREATED:
+-------------------------
+- hybrid_evaluator.py (to be implemented)
+- hybrid_report_generator.py (to be implemented)
+
+NEXT STEPS:
+-----------
+1. Run: python scripts/custom_boundary_config.py
+2. Test: python scripts/wave_type_reconstructor.py --config configs/custom_recommended.json
+3. Implement hybrid_evaluator.py based on wave_type_reconstructor.py
+4. Generate final evaluation reports

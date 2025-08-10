@@ -1,0 +1,22 @@
+{
+  "wave_type_distribution": {
+    "still": 0.3100529100529101,
+    "random": 0.1925925925925926,
+    "pwm_extended": 0.11322751322751323,
+    "pwm_basic": 0.06031746031746032,
+    "sine": 0.0380952380952381,
+    "odd_even": 0.2751322751322751,
+    "square": 0.010582010582010581
+  },
+  "wave_type_counts": {
+    "still": 293,
+    "random": 182,
+    "pwm_extended": 107,
+    "pwm_basic": 57,
+    "sine": 36,
+    "odd_even": 260,
+    "square": 10
+  },
+  "total_files": 315,
+  "total_decisions": 945
+}

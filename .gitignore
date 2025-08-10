@@ -32,3 +32,8 @@ legacy_code/
 # Exclude sensitive/large datasets (do not sync to Git)
 data/conformer_osci/audio_segments_information_jsons/
 data/training_data/
+# Ignore pickle datasets
+*.pkl
+# Ignore audio segment JSONs except example
+/data/conformer_osci/audio_segments_information_jsons/*.json
+!/data/conformer_osci/audio_segments_information_jsons/Bilderbuch_-_Maschin.json
