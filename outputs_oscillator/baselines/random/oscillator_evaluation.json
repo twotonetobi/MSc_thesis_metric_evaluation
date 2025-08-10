@@ -1,0 +1,125 @@
+{
+  "segment_statistics": {
+    "intro": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.49876861218330637,
+      "std_amplitude": 0.058478978761247004,
+      "mean_frequency": 0.2394485527209039,
+      "std_frequency": 0.03471208551676194,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.13527947794445835,
+        "std": 0.033866429868646034
+      },
+      "sample_count": 720
+    },
+    "verse": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.49840865517498145,
+      "std_amplitude": 0.03147506784010345,
+      "mean_frequency": 0.23750701230537313,
+      "std_frequency": 0.017305566311336288,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.1409418295285987,
+        "std": 0.031087437361978693
+      },
+      "sample_count": 1350
+    },
+    "chorus": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.5029684879108678,
+      "std_amplitude": 0.04734943564639446,
+      "mean_frequency": 0.23848402193304888,
+      "std_frequency": 0.02530852826228334,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.13658410648576721,
+        "std": 0.033765978592184456
+      },
+      "sample_count": 933
+    },
+    "instrumental": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.5026420621119346,
+      "std_amplitude": 0.061765794180437185,
+      "mean_frequency": 0.23420958768976521,
+      "std_frequency": 0.0308911840656287,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.1171953862467365,
+        "std": 0.021453304537369287
+      },
+      "sample_count": 126
+    },
+    "end": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.6012667460799933,
+      "std_amplitude": 0.21928561140126107,
+      "mean_frequency": 0.13418905643044146,
+      "std_frequency": 0.10385649445939502,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.09360072737877506,
+        "std": 0.0655274848024274
+      },
+      "sample_count": 6
+    },
+    "break": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.4991115404294699,
+      "std_amplitude": 0.006422973932948319,
+      "mean_frequency": 0.23881849975638902,
+      "std_frequency": 0.004817946088661309,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.11463287988306674,
+        "std": 0.0023126141225574253
+      },
+      "sample_count": 3
+    },
+    "outro": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.5172934840400849,
+      "std_amplitude": 0.31078929473923256,
+      "mean_frequency": 0.19145100756001798,
+      "std_frequency": 0.11988733133635816,
+      "mean_mai": 0.0,
+      "std_mai": 0.0,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.09189648362880863,
+        "std": 0.05754591904145192
+      },
+      "sample_count": 3
+    }
+  },
+  "num_files": 212,
+  "total_segments": 1047
+}

@@ -22,20 +22,20 @@ class TrainingStatsExtractor:
             'frequency', 'amplitude', 'offset', 'phase', 'col_hue', 'col_sat'
         ]
         
-        # Wave type mappings
-        self.wave_a_ranges = {
-            'sine': (0.05, 0.15),
-            'saw_up': (0.25, 0.35),
-            'saw_down': (0.45, 0.55),
-            'square': (0.65, 0.75),
-            'linear': (0.85, 0.95)
+        # Wave type mappings with complete coverage (no gaps)
+        self.wave_a_boundaries = {
+            'sine': (0.0, 0.2),      # 0.0-0.2 → sine (center: 0.1)
+            'saw_up': (0.2, 0.4),    # 0.2-0.4 → saw_up (center: 0.3)
+            'saw_down': (0.4, 0.6),  # 0.4-0.6 → saw_down (center: 0.5)
+            'square': (0.6, 0.8),    # 0.6-0.8 → square (center: 0.7)
+            'linear': (0.8, 1.0)     # 0.8-1.0 → linear (center: 0.9)
         }
         
-        self.wave_b_ranges = {
-            'other': (0.0625, 0.1875),
-            'plateau': (0.3125, 0.4375),
-            'gaussian_single': (0.5625, 0.6875),
-            'gaussian_double': (0.8125, 0.9375)
+        self.wave_b_boundaries = {
+            'other': (0.0, 0.25),           # 0.0-0.25 → other (center: 0.125)
+            'plateau': (0.25, 0.5),         # 0.25-0.5 → plateau (center: 0.375)
+            'gaussian_single': (0.5, 0.75), # 0.5-0.75 → gaussian_single (center: 0.625)
+            'gaussian_double': (0.75, 1.0)  # 0.75-1.0 → gaussian_double (center: 0.875)
         }
         
     def extract_from_directory(self, training_dir: Path, segment_info_dir: Path) -> Dict:
@@ -45,55 +45,126 @@ class TrainingStatsExtractor:
         
         # Containers for all data
         all_params = {name: [] for name in self.param_names}
-        segment_specific = {'verse': {}, 'chorus': {}, 'bridge': {}, 'intro': {}, 'outro': {}}
+        
+        # FIXED: Initialize segment_specific with all parameter names
+        segment_types = ['verse', 'chorus', 'bridge', 'intro', 'outro', 'drop', 'buildup', 'breakdown']
+        segment_specific = {}
+        for seg_type in segment_types:
+            segment_specific[seg_type] = {name: [] for name in self.param_names}
+        
         wave_conventions = {}
         
         # Process each training file
         pkl_files = sorted(training_dir.glob('*.pkl'))
         
+        if not pkl_files:
+            print(f"Warning: No .pkl files found in {training_dir}")
+            return {}
+        
         for pkl_file in pkl_files:
             print(f"  Processing {pkl_file.stem}")
             
-            # Load oscillator params
+            # Load oscillator params (should be numpy array of shape (frames, 60))
             with open(pkl_file, 'rb') as f:
                 data = pickle.load(f)
             
-            # Find corresponding segment info
-            base_name = pkl_file.stem.split('_')[0]  # Adjust based on naming
-            segment_file = segment_info_dir / f"{base_name}.json"
+            # Verify data shape
+            if not isinstance(data, np.ndarray):
+                print(f"    Warning: Expected numpy array, got {type(data)}")
+                continue
+                
+            if data.shape[1] != 60:
+                print(f"    Warning: Expected 60 dimensions, got {data.shape[1]}")
+                continue
+            
+            print(f"    Loaded data shape: {data.shape}")
+            
+            # Find corresponding segment info (might not exist for all files)
+            base_name = pkl_file.stem
+            # Try different naming patterns
+            possible_json_names = [
+                f"{base_name}.json",
+                f"{base_name.split('-')[0]}.json",  # Try first part before dash
+                f"{base_name.replace('-', '_')}.json"  # Try replacing dashes
+            ]
             
             segments = None
-            if segment_file.exists():
-                with open(segment_file, 'r') as f:
-                    seg_data = json.load(f)
-                    segments = seg_data.get('segments', [])
+            for json_name in possible_json_names:
+                segment_file = segment_info_dir / json_name
+                if segment_file.exists():
+                    with open(segment_file, 'r') as f:
+                        seg_data = json.load(f)
+                        segments = seg_data.get('segments', [])
+                    print(f"    Found segment info with {len(segments)} segments")
+                    break
+            
+            if not segments:
+                print(f"    No segment info found, processing entire file")
             
             # Process standard parameters (3 groups)
             for group_idx in range(3):
                 start_idx = group_idx * 20
                 standard_params = data[:, start_idx:start_idx+10]
                 
-                # Collect raw parameters
+                # Collect global parameters (entire file)
                 for param_idx, param_name in enumerate(self.param_names):
                     all_params[param_name].extend(standard_params[:, param_idx].flatten())
                 
                 # Segment-specific analysis if available
                 if segments:
                     for segment in segments:
-                        if segment['label'] in segment_specific:
-                            start_frame = int(segment['start'] * 30)
-                            end_frame = int(segment['end'] * 30)
+                        seg_label = segment.get('label', '').lower()
+                        
+                        # Skip non-music segments
+                        if seg_label in ['start', 'end', 'silence']:
+                            continue
+                        
+                        # Map to known segment types or use 'other'
+                        if seg_label not in segment_specific:
+                            # Try to map common variations
+                            if 'vers' in seg_label:
+                                seg_type = 'verse'
+                            elif 'choru' in seg_label or 'refrain' in seg_label:
+                                seg_type = 'chorus'
+                            elif 'bridge' in seg_label:
+                                seg_type = 'bridge'
+                            elif 'intro' in seg_label:
+                                seg_type = 'intro'
+                            elif 'outro' in seg_label or 'ending' in seg_label:
+                                seg_type = 'outro'
+                            elif 'drop' in seg_label:
+                                seg_type = 'drop'
+                            elif 'build' in seg_label:
+                                seg_type = 'buildup'
+                            elif 'break' in seg_label:
+                                seg_type = 'breakdown'
+                            else:
+                                # Add new segment type if needed
+                                if seg_label not in segment_specific:
+                                    segment_specific[seg_label] = {name: [] for name in self.param_names}
+                                seg_type = seg_label
+                        else:
+                            seg_type = seg_label
+                        
+                        # Extract segment frames
+                        start_frame = int(segment['start'] * 30)  # 30 fps
+                        end_frame = min(int(segment['end'] * 30), len(data))
+                        
+                        if start_frame < len(data) and end_frame > start_frame:
                             seg_data = standard_params[start_frame:end_frame]
                             
                             if len(seg_data) > 0:
-                                seg_type = segment['label']
-                                if seg_type not in segment_specific:
-                                    segment_specific[seg_type] = {name: [] for name in self.param_names}
-                                
                                 for param_idx, param_name in enumerate(self.param_names):
                                     segment_specific[seg_type][param_name].extend(
                                         seg_data[:, param_idx].flatten()
                                     )
+        
+        # Remove empty segment types
+        segment_specific = {k: v for k, v in segment_specific.items() 
+                          if any(len(vals) > 0 for vals in v.values())}
+        
+        print(f"\nProcessed {len(pkl_files)} files")
+        print(f"Segment types found: {list(segment_specific.keys())}")
         
         # Compute statistics
         statistics = self._compute_statistics(all_params, segment_specific)
@@ -109,6 +180,7 @@ class TrainingStatsExtractor:
         stats = {'global': {}, 'per_segment': {}}
         
         # Global statistics
+        print("\nComputing global statistics...")
         for param_name, values in all_params.items():
             if len(values) > 0:
                 values = np.array(values)
@@ -123,17 +195,24 @@ class TrainingStatsExtractor:
                     'distribution': np.histogram(values, bins=50)[0].tolist(),
                     'bin_edges': np.histogram(values, bins=50)[1].tolist()
                 }
+                print(f"  {param_name}: mean={stats['global'][param_name]['mean']:.3f}, "
+                      f"std={stats['global'][param_name]['std']:.3f}")
         
         # Per-segment statistics
+        print("\nComputing per-segment statistics...")
         for seg_type, params in segment_specific.items():
             stats['per_segment'][seg_type] = {}
+            print(f"  {seg_type}:")
             for param_name, values in params.items():
                 if len(values) > 0:
                     values = np.array(values)
                     stats['per_segment'][seg_type][param_name] = {
                         'mean': float(np.mean(values)),
-                        'std': float(np.std(values))
+                        'std': float(np.std(values)),
+                        'count': len(values)
                     }
+                    if param_name in ['amplitude', 'frequency']:  # Show key params
+                        print(f"    {param_name}: mean={stats['per_segment'][seg_type][param_name]['mean']:.3f}")
         
         return stats
     
@@ -142,22 +221,13 @@ class TrainingStatsExtractor:
         
         conventions = {}
         
-        # Use the complete coverage boundaries
-        wave_a_boundaries = {
-            'sine': (0.0, 0.2),
-            'saw_up': (0.2, 0.4),
-            'saw_down': (0.4, 0.6),
-            'square': (0.6, 0.8),
-            'linear': (0.8, 1.0)
-        }
-        
         for seg_type, params in segment_specific.items():
             if 'wave_type_a' in params and len(params['wave_type_a']) > 0:
                 wave_types = []
                 for val in params['wave_type_a']:
                     val = np.clip(val, 0.0, 1.0)  # Ensure valid range
                     # Find which boundary contains this value
-                    for wave_name, (min_v, max_v) in wave_a_boundaries.items():
+                    for wave_name, (min_v, max_v) in self.wave_a_boundaries.items():
                         if min_v <= val <= max_v:
                             wave_types.append(wave_name)
                             break
@@ -181,10 +251,30 @@ class TrainingStatsExtractor:
         with open(output_dir / 'wave_type_conventions.json', 'w') as f:
             json.dump(stats.get('wave_conventions', {}), f, indent=2)
         
+        # Save summary as readable text
+        with open(output_dir / 'summary.txt', 'w') as f:
+            f.write("Training Data Statistics Summary\n")
+            f.write("=" * 50 + "\n\n")
+            
+            f.write("Global Statistics:\n")
+            for param, pstats in stats['global'].items():
+                f.write(f"  {param}:\n")
+                f.write(f"    Mean: {pstats['mean']:.4f}\n")
+                f.write(f"    Std:  {pstats['std']:.4f}\n")
+                f.write(f"    Range: [{pstats['min']:.4f}, {pstats['max']:.4f}]\n\n")
+            
+            f.write("\nSegment-specific Statistics:\n")
+            for seg_type, seg_stats in stats['per_segment'].items():
+                f.write(f"  {seg_type}:\n")
+                if 'amplitude' in seg_stats:
+                    f.write(f"    Amplitude: {seg_stats['amplitude']['mean']:.3f} ± {seg_stats['amplitude']['std']:.3f}\n")
+                if 'frequency' in seg_stats:
+                    f.write(f"    Frequency: {seg_stats['frequency']['mean']:.3f} ± {seg_stats['frequency']['std']:.3f}\n")
+        
         # Create summary plots
         self._create_summary_plots(stats, output_dir)
         
-        print(f"Statistics saved to {output_dir}")
+        print(f"\nStatistics saved to {output_dir}")
     
     def _create_summary_plots(self, stats: Dict, output_dir: Path):
         """Create visualization of training data distributions."""
@@ -193,20 +283,33 @@ class TrainingStatsExtractor:
         fig, axes = plt.subplots(2, 5, figsize=(20, 8))
         axes = axes.flatten()
         
-        for idx, (param_name, param_stats) in enumerate(stats['global'].items()):
-            if idx < 10 and 'distribution' in param_stats:
+        for idx, param_name in enumerate(self.param_names):
+            if param_name in stats['global'] and 'distribution' in stats['global'][param_name]:
                 ax = axes[idx]
+                param_stats = stats['global'][param_name]
                 bins = param_stats['bin_edges'][:-1]
                 values = param_stats['distribution']
-                ax.bar(bins, values, width=bins[1]-bins[0])
-                ax.set_title(param_name)
+                
+                # Bar plot
+                width = (bins[1] - bins[0]) if len(bins) > 1 else 1
+                ax.bar(bins, values, width=width, alpha=0.7, color='steelblue')
+                
+                # Add mean line
+                ax.axvline(param_stats['mean'], color='red', linestyle='--', 
+                          label=f"Mean: {param_stats['mean']:.2f}")
+                
+                ax.set_title(param_name.replace('_', ' ').title())
                 ax.set_xlabel('Value')
                 ax.set_ylabel('Count')
+                ax.legend(fontsize=8)
+                ax.grid(True, alpha=0.3)
         
-        plt.suptitle('Training Data Parameter Distributions')
+        plt.suptitle('Training Data Parameter Distributions', fontsize=16, fontweight='bold')
         plt.tight_layout()
-        plt.savefig(output_dir / 'training_distributions.png', dpi=150)
+        plt.savefig(output_dir / 'training_distributions.png', dpi=150, bbox_inches='tight')
         plt.close()
+        
+        print(f"  Created distribution plot: training_distributions.png")
 
 
 def main():
@@ -224,12 +327,26 @@ def main():
     
     args = parser.parse_args()
     
+    # Validate directories
+    training_path = Path(args.training_dir)
+    segment_path = Path(args.segment_dir)
+    
+    if not training_path.exists():
+        print(f"Error: Training directory not found: {training_path}")
+        return
+    
+    if not segment_path.exists():
+        print(f"Warning: Segment directory not found: {segment_path}")
+        print("Will process without segment information")
+    
     extractor = TrainingStatsExtractor()
-    stats = extractor.extract_from_directory(
-        Path(args.training_dir),
-        Path(args.segment_dir)
-    )
-    extractor.save_statistics(stats, Path(args.output_dir))
+    stats = extractor.extract_from_directory(training_path, segment_path)
+    
+    if stats:
+        extractor.save_statistics(stats, Path(args.output_dir))
+        print("\nExtraction complete!")
+    else:
+        print("\nNo statistics extracted. Check your input directories.")
 
 if __name__ == '__main__':
     main()

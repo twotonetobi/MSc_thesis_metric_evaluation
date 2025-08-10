@@ -1,0 +1,74 @@
+{
+  "segment_statistics": {
+    "intro": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.2602679431438446,
+      "std_amplitude": 0.15230613946914673,
+      "mean_frequency": 0.34877681732177734,
+      "std_frequency": 0.2180449515581131,
+      "mean_mai": 0.3011154532432556,
+      "std_mai": 0.21161003410816193,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.18794113397598267,
+        "std": 0.13105449080467224
+      },
+      "sample_count": 657
+    },
+    "verse": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.26758939027786255,
+      "std_amplitude": 0.1535203605890274,
+      "mean_frequency": 0.37650519609451294,
+      "std_frequency": 0.23779286444187164,
+      "mean_mai": 0.3271518647670746,
+      "std_mai": 0.2525998651981354,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.19926953315734863,
+        "std": 0.12833276391029358
+      },
+      "sample_count": 402
+    },
+    "chorus": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.25197744369506836,
+      "std_amplitude": 0.1401800662279129,
+      "mean_frequency": 0.41762256622314453,
+      "std_frequency": 0.2558368146419525,
+      "mean_mai": 0.2709309458732605,
+      "std_mai": 0.18539506196975708,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.19711388647556305,
+        "std": 0.12344454228878021
+      },
+      "sample_count": 111
+    },
+    "instrumental": {
+      "wave_distribution": {
+        "sine": 1.0
+      },
+      "mean_amplitude": 0.24808937311172485,
+      "std_amplitude": 0.1954866349697113,
+      "mean_frequency": 0.3167954683303833,
+      "std_frequency": 0.2758376896381378,
+      "mean_mai": 0.2045167088508606,
+      "std_mai": 0.013218567706644535,
+      "mean_consistency": 1.0,
+      "freq_bpm_ratio_distribution": {
+        "mean": 0.1520618200302124,
+        "std": 0.13240209221839905
+      },
+      "sample_count": 9
+    }
+  },
+  "num_files": 263,
+  "total_segments": 393
+}

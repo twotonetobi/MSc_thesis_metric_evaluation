@@ -1,27 +1,27 @@
 === LIGHT Report ===
-Generated: 2025-08-09T16:47:37.869440
+Generated: 2025-08-10T10:41:23.487224
 
 === LIGHT Pickle Inspection ===
-File: /Users/chetbaker/work/edu_0003_Master_DR/Master_Thesis/assets/evaluation/data/training_data/oscillator_params/DK2020-03-RGZ.pkl
-Size: 3869922 bytes
+File: /Users/chetbaker/work/edu_0003_Master_DR/Master_Thesis/assets/evaluation/data/check_from_TD_AKA_AKA_Junge_Junge_-_Vallut_Bass_part_01_intro.pkl
+Size: 230498 bytes
 
 - Top-level Summary -
-{'dtype': 'float64',
+{'dtype': 'float32',
  'max': 1.0,
- 'mean': 0.1374815953341486,
- 'min': 0.0,
- 'sample_values': ['np.float64(0.0)',
-                   'np.float64(0.0)',
-                   'np.float64(0.1)',
-                   'np.float64(0.0)',
-                   'np.float64(0.0)',
-                   'np.float64(0.0)',
-                   'np.float64(0.0)',
-                   'np.float64(0.5)',
-                   'np.float64(0.0)',
-                   'np.float64(0.0)'],
- 'shape': (8062, 60),
- 'std': 0.25137107299938355,
+ 'mean': 0.26902201771736145,
+ 'min': -0.02579539641737938,
+ 'sample_values': ['np.float32(0.1420253)',
+                   'np.float32(0.14570577)',
+                   'np.float32(0.0)',
+                   'np.float32(0.33202413)',
+                   'np.float32(0.97482514)',
+                   'np.float32(0.17452736)',
+                   'np.float32(0.503816)',
+                   'np.float32(0.49964425)',
+                   'np.float32(0.8412437)',
+                   'np.float32(0.8470778)'],
+ 'shape': (944, 61),
+ 'std': 0.24213266372680664,
  'type': 'numpy.ndarray'}
 
 - Heuristic 'tic/tick' Detection -

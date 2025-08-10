@@ -1,0 +1,17 @@
+Inter-Group Analysis Report
+==================================================
+
+Files analyzed: 265
+
+Summary Statistics:
+  Mean correlation: 0.166 ± 0.417
+  Mean phase difference: 0.083 rad
+  Mean complementary score: -0.236
+
+Correlation Categories:
+  Strong (>0.7): 13.4%
+  Moderate (0.3-0.7): 38.0%
+  Independent (<0.3): 48.6%
+
+Interpretation:
+  - Groups operate mostly independently

@@ -1,0 +1,11 @@
+{
+  "mean_correlation": 0.16623204946517944,
+  "std_correlation": 0.41693639755249023,
+  "mean_phase_diff": 0.08281578868627548,
+  "std_phase_diff": 0.07815718650817871,
+  "mean_complementary": -0.23611457645893097,
+  "strong_correlations": 0.13417190775681342,
+  "moderate_correlations": 0.380293501048218,
+  "independent_groups": 0.48553459119496856,
+  "num_files": 265
+}
