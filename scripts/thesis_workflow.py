@@ -23,7 +23,7 @@ sys.path.append('scripts')
 from run_evaluation_pipeline import EvaluationPipeline
 from quality_based_comparator_optimized import OptimizedQualityComparator
 from wave_type_reconstructor import WaveTypeReconstructor
-from thesis_plot_generator import ThesisPlotGenerator
+from thesis_plot_generator_fixed import ThesisPlotGenerator
 
 
 class ThesisVisualizationWorkflow:
@@ -154,12 +154,10 @@ class ThesisVisualizationWorkflow:
         else:
             config = None
         
-        # Initialize reconstructor
-        reconstructor = WaveTypeReconstructor(config=config, verbose=False)
-        
+        reconstructor = WaveTypeReconstructor(config=config, verbose=False)        
         # Reconstruct dataset (limited for speed)
         results = reconstructor.reconstruct_dataset(
-            pas_dir, geo_dir, max_files=50  # Limit for demonstration
+            pas_dir, geo_dir # Limit for demonstration
         )
         
         # Save results
