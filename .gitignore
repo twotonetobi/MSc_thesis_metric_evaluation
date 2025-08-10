@@ -16,7 +16,6 @@ venv/
 .ipynb_checkpoints/
 
 # Project outputs
-outputs/
 
 # Secrets
 .env
