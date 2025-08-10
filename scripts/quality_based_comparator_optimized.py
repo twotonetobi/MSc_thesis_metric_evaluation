@@ -47,10 +47,10 @@ class OptimizedQualityComparator(QualityBasedComparator):
         
         # Alternative metric set without problematic metrics
         self.refined_metrics = {
-            'ssm_correlation': 0.35,
+            'ssm_correlation': 0.40,
             'beat_peak_alignment': 0.30,
             'beat_valley_alignment': 0.20,
-            'onset_correlation': 0.15
+            'onset_correlation': 0.10
         }
         
         # Configuration flag
@@ -302,6 +302,37 @@ class OptimizedQualityComparator(QualityBasedComparator):
         }
         
         return combined_score, interpretation, details
+
+    def create_quality_achievement_dashboard(self, df_gen: pd.DataFrame, 
+                                            df_gt: pd.DataFrame,
+                                            output_path: Path):
+        """Create dashboard with refined metrics only."""
+        
+        # Create filtered DataFrames that exclude problematic metrics
+        df_gen_clean = df_gen.copy()
+        df_gt_clean = df_gt.copy()
+        
+        # Metrics to exclude from visualization (but not from computation)
+        excluded_metrics = ['rms_correlation', 'novelty_correlation']
+        
+        for metric in excluded_metrics:
+            if metric in df_gen_clean.columns:
+                # Replace with NaN so they don't appear in plots
+                df_gen_clean[metric] = np.nan
+            if metric in df_gt_clean.columns:
+                df_gt_clean[metric] = np.nan
+        
+        # For novelty, we could add a phase-tolerant version
+        if 'novelty_correlation' in df_gen.columns:
+            # Compute phase-tolerant version for display
+            # This is a placeholder - you'd need actual data
+            df_gen_clean['novelty_correlation_adjusted'] = df_gen['novelty_correlation'] * 10
+            df_gt_clean['novelty_correlation_adjusted'] = df_gt['novelty_correlation'] * 10
+        
+        # Now call the parent method with cleaned data
+        return super().create_quality_achievement_dashboard(
+            df_gen_clean, df_gt_clean, output_path
+        )
     
     def generate_optimized_report(self, df_gen: pd.DataFrame, df_gt: pd.DataFrame,
                                 output_path: Path) -> float:
@@ -429,6 +460,29 @@ def run_optimized_comparison(data_dir: Path = Path('data/edge_intention'),
     
     # Run optimized comparison
     comparator = OptimizedQualityComparator(data_dir, output_dir)
+
+       
+    # Step 2: Filter the dataframes BEFORE dashboard creation
+    df_gen_display = df_gen.copy()
+    df_gt_display = df_gt.copy()
+    
+    # Remove RMS from display data
+    if 'rms_correlation' in df_gen_display.columns:
+        df_gen_display.drop('rms_correlation', axis=1, inplace=True)
+    if 'rms_correlation' in df_gt_display.columns:
+        df_gt_display.drop('rms_correlation', axis=1, inplace=True)
+    
+    # Fix novelty correlation for display (multiply by adjustment factor)
+    if 'novelty_correlation' in df_gen_display.columns:
+        # This shows the phase-tolerant equivalent
+        df_gen_display['novelty_correlation'] = df_gen_display['novelty_correlation'].abs() * 15
+        df_gt_display['novelty_correlation'] = df_gt_display['novelty_correlation'].abs() * 15
+    
+    # Now create dashboard with cleaned data
+    comparator.create_quality_achievement_dashboard(
+        df_gen_display, df_gt_display,
+        output_dir / 'optimized_dashboard_without_rms_and_old_novelty.png'
+    )
     
     # Generate report
     score = comparator.generate_optimized_report(

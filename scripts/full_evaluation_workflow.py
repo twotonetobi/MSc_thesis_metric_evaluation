@@ -172,14 +172,14 @@ class FullEvaluationWorkflow:
         return success
 
     def run_quality_based_comparison(self) -> bool:
-        """Run quality-based ground truth comparison (new paradigm)."""
+        """Run quality-based ground truth comparison (OPTIMIZED v3.1)."""
         
         self.log("\n" + "="*60)
-        self.log("3️⃣ QUALITY-BASED GROUND TRUTH COMPARISON")
+        self.log("3️⃣ QUALITY-BASED GROUND TRUTH COMPARISON (OPTIMIZED)")
         self.log("="*60)
         
-        # Import the new comparator
-        from quality_based_comparator import QualityBasedComparator
+        # Import the OPTIMIZED comparator instead
+        from quality_based_comparator_optimized import OptimizedQualityComparator
         from run_evaluation_pipeline import EvaluationPipeline
         
         # Check if ground truth data exists
@@ -191,7 +191,7 @@ class FullEvaluationWorkflow:
             return True
         
         # Create quality comparison output directory
-        quality_output = self.output_dir / 'quality_comparison'
+        quality_output = self.output_dir / 'quality_comparison_optimized'
         quality_output.mkdir(exist_ok=True)
         
         # Run evaluations
@@ -209,25 +209,32 @@ class FullEvaluationWorkflow:
             output_csv=quality_output / 'ground_truth_metrics.csv'
         )
         
-        # Run quality comparison
-        comparator = QualityBasedComparator(self.data_dir, quality_output)
+        # Use OPTIMIZED comparator
+        comparator = OptimizedQualityComparator(self.data_dir, quality_output)
         
-        overall_score = comparator.create_quality_achievement_dashboard(
+        # Compute optimized score
+        score, interpretation, details = comparator.compute_optimized_quality_score(df_gen, df_gt)
+        
+        # Generate report
+        comparator.generate_optimized_report(
+            df_gen, df_gt,
+            quality_output / 'optimized_quality_report.md'
+        )
+        
+        # Create dashboard
+        comparator.create_quality_achievement_dashboard(
             df_gen, df_gt, 
             quality_output / 'quality_achievement_dashboard.png'
         )
         
-        comparator.generate_quality_report(
-            df_gen, df_gt,
-            quality_output / 'quality_comparison_report.md'
-        )
-        
-        self.log(f"✅ Quality comparison complete: {overall_score:.1%} achievement")
+        self.log(f"✅ Quality comparison complete: {score:.1%} achievement")
         
         # Store results
         self.results['quality_comparison'] = {
-            'overall_score': overall_score,
-            'paradigm': 'quality_achievement'
+            'overall_score': score,
+            'paradigm': 'quality_achievement_optimized_v3.1',
+            'interpretation': interpretation,
+            'details': details
         }
         
         return True
