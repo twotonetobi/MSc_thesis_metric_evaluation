@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-Interactive Boundary Tuner for Wave Type Distribution
+Interactive Boundary Tuner for Wave Type Distribution - FIXED VERSION
+Uses correct decision_boundary_XX key names
 Helps find optimal decision boundaries for even distribution
 """
 
@@ -12,11 +13,23 @@ from typing import Dict, List, Tuple
 def analyze_current_distribution(results_file: Path = Path('outputs_hybrid/wave_reconstruction_fixed.json')):
     """Load and analyze current distribution."""
     
-    with open(results_file, 'r') as f:
-        data = json.load(f)
-    
-    dist = data['wave_type_distribution']
-    counts = data['wave_type_counts']
+    if not results_file.exists():
+        print(f"Warning: {results_file} not found. Using default distribution.")
+        dist = {
+            'still': 0.31,
+            'sine': 0.038, 
+            'pwm_basic': 0.06,
+            'pwm_extended': 0.113,
+            'odd_even': 0.275,
+            'square': 0.011,
+            'random': 0.193
+        }
+        counts = {k: int(v * 945) for k, v in dist.items()}
+    else:
+        with open(results_file, 'r') as f:
+            data = json.load(f)
+        dist = data['wave_type_distribution']
+        counts = data.get('wave_type_counts', {k: int(v * 945) for k, v in dist.items()})
     
     print("\n" + "="*60)
     print("CURRENT DISTRIBUTION ANALYSIS")
@@ -38,13 +51,13 @@ def suggest_boundary_adjustments(current_dist: Dict, target_dist: Dict = None):
     if target_dist is None:
         # Default target: more even distribution
         target_dist = {
-            'still': 0.15,      # Reduce from 32.5% to 15%
-            'sine': 0.15,       # Increase from 1.4% to 15%
-            'pwm_basic': 0.15,  # Increase from 2.8% to 15%
-            'pwm_extended': 0.20, # Slight reduction from 26.1% to 20%
-            'odd_even': 0.20,   # Reduce from 37.1% to 20%
-            'square': 0.05,     # Add some square waves
-            'random': 0.10      # Increase from 0.1% to 10%
+            'still': 0.15,      # Reduce from ~31% to 15%
+            'sine': 0.20,       # Increase from ~4% to 20%
+            'pwm_basic': 0.10,  # Increase from ~6% to 10%
+            'pwm_extended': 0.15, # Increase from ~11% to 15%
+            'odd_even': 0.25,   # Reduce from ~28% to 25%
+            'square': 0.05,     # Increase from ~1% to 5%
+            'random': 0.10      # Reduce from ~19% to 10%
         }
     
     print("\n" + "="*60)
@@ -58,22 +71,22 @@ def suggest_boundary_adjustments(current_dist: Dict, target_dist: Dict = None):
         sign = "+" if diff > 0 else ""
         print(f"  {wt:15s}: {current_pct*100:5.1f}% → {pct*100:5.1f}% ({sign}{diff:+.1f}%)")
     
-    # Current boundaries
+    # Current boundaries (from TouchDesigner)
     current_boundaries = {
-        'boundary_01': 0.22,  # Controls still vs others
-        'boundary_02': 0.7,   # Controls sine vs pwm_basic
-        'boundary_03': 1.1,   # Controls pwm_basic vs pwm_extended
-        'boundary_04': 2.2,   # Controls pwm_extended vs odd_even
-        'boundary_05': 7.0    # Controls odd_even vs random/square
+        'decision_boundary_01': 0.22,  # Controls still vs others
+        'decision_boundary_02': 0.7,   # Controls sine vs pwm_basic
+        'decision_boundary_03': 1.1,   # Controls pwm_basic vs pwm_extended
+        'decision_boundary_04': 2.2,   # Controls pwm_extended vs odd_even
+        'decision_boundary_05': 7.0    # Controls odd_even vs random/square
     }
     
     # Suggested adjustments based on distribution analysis
     suggested_boundaries = {
-        'boundary_01': 0.15,  # Lower to reduce "still" (32.5% → 15%)
-        'boundary_02': 0.9,   # Raise to increase "sine" range (1.4% → 15%)
-        'boundary_03': 1.3,   # Raise to increase "pwm_basic" range (2.8% → 15%)
-        'boundary_04': 1.8,   # Lower to reduce "odd_even" range
-        'boundary_05': 3.5    # Much lower to increase "random" (0.1% → 10%)
+        'decision_boundary_01': 0.06,  # Lower to reduce "still" (31% → 15%)
+        'decision_boundary_02': 1.35,  # Raise to increase "sine" range (4% → 20%)
+        'decision_boundary_03': 1.65,  # Raise to increase "pwm_basic" range (6% → 10%)
+        'decision_boundary_04': 1.95,  # Lower slightly
+        'decision_boundary_05': 4.2    # Lower to reduce "random" (19% → 10%)
     }
     
     print("\n" + "="*60)
@@ -101,11 +114,11 @@ def suggest_boundary_adjustments(current_dist: Dict, target_dist: Dict = None):
     # Alternative 1: More aggressive
     print("\n   Alternative A (More Aggressive):")
     alt_a = {
-        'boundary_01': 0.10,  # Very low for minimal "still"
-        'boundary_02': 1.0,   # Higher for more "sine"
-        'boundary_03': 1.5,   # Higher for more "pwm_basic"
-        'boundary_04': 2.0,   # 
-        'boundary_05': 3.0    # Much lower for more "random"
+        'decision_boundary_01': 0.05,  # Very low for minimal "still"
+        'decision_boundary_02': 1.4,   # Higher for more "sine"
+        'decision_boundary_03': 1.7,   # Higher for more "pwm_basic"
+        'decision_boundary_04': 2.0,   # 
+        'decision_boundary_05': 4.0    # Lower for less "random"
     }
     for key, val in alt_a.items():
         print(f"     {key}: {val:.2f}")
@@ -113,11 +126,11 @@ def suggest_boundary_adjustments(current_dist: Dict, target_dist: Dict = None):
     # Alternative 2: Conservative
     print("\n   Alternative B (Conservative):")
     alt_b = {
-        'boundary_01': 0.18,
-        'boundary_02': 0.8,
-        'boundary_03': 1.2,
-        'boundary_04': 2.0,
-        'boundary_05': 4.0
+        'decision_boundary_01': 0.08,
+        'decision_boundary_02': 1.3,
+        'decision_boundary_03': 1.6,
+        'decision_boundary_04': 1.9,
+        'decision_boundary_05': 5.0
     }
     for key, val in alt_b.items():
         print(f"     {key}: {val:.2f}")
@@ -125,7 +138,7 @@ def suggest_boundary_adjustments(current_dist: Dict, target_dist: Dict = None):
     return suggested_boundaries
 
 def generate_config_file(boundaries: Dict, output_path: Path = Path('configs/tuned_boundaries.json')):
-    """Generate a config file with new boundaries."""
+    """Generate a config file with new boundaries using CORRECT key names."""
     
     config = {
         "max_cycles_per_second": 4.0,
@@ -146,13 +159,12 @@ def generate_config_file(boundaries: Dict, output_path: Path = Path('configs/tun
         "oscillation_threshold": 8,  # Reduced from 10
         "geo_phase_threshold": 0.15,
         "geo_freq_threshold": 0.15,
-        "geo_offset_threshold": 0.15,
-        "decision_boundary_01": boundaries['boundary_01'],
-        "decision_boundary_02": boundaries['boundary_02'],
-        "decision_boundary_03": boundaries['boundary_03'],
-        "decision_boundary_04": boundaries['boundary_04'],
-        "decision_boundary_05": boundaries['boundary_05']
+        "geo_offset_threshold": 0.15
     }
+    
+    # Add boundaries with correct key names
+    for key, value in boundaries.items():
+        config[key] = value
     
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -169,15 +181,15 @@ def simulate_distribution(dynamic_values: np.ndarray, intensity_values: np.ndarr
     decisions = []
     
     for intensity, dynamic in zip(intensity_values, dynamic_values):
-        if intensity < boundaries['boundary_01']:
+        if intensity < boundaries['decision_boundary_01']:
             decision = 'still'
-        elif dynamic < boundaries['boundary_02']:
+        elif dynamic < boundaries['decision_boundary_02']:
             decision = 'sine'
-        elif dynamic < boundaries['boundary_03']:
+        elif dynamic < boundaries['decision_boundary_03']:
             decision = 'pwm_basic'
-        elif dynamic < boundaries['boundary_04']:
+        elif dynamic < boundaries['decision_boundary_04']:
             decision = 'pwm_extended'
-        elif dynamic < boundaries['boundary_05']:
+        elif dynamic < boundaries['decision_boundary_05']:
             decision = 'odd_even'
         else:
             # Simplified: assume 50/50 split between square and random
@@ -198,23 +210,13 @@ def interactive_tuner():
     """Interactive boundary tuning interface."""
     
     print("\n" + "="*60)
-    print("INTERACTIVE BOUNDARY TUNER")
+    print("INTERACTIVE BOUNDARY TUNER - FIXED VERSION")
     print("="*60)
+    print("Now using correct 'decision_boundary_XX' key names!")
     
     # Load current results if available
     results_path = Path('outputs_hybrid/wave_reconstruction_fixed.json')
-    if results_path.exists():
-        current_dist, counts = analyze_current_distribution(results_path)
-    else:
-        print("No results file found. Using default distribution.")
-        current_dist = {
-            'odd_even': 0.371,
-            'still': 0.325,
-            'pwm_extended': 0.261,
-            'pwm_basic': 0.028,
-            'sine': 0.014,
-            'random': 0.001
-        }
+    current_dist, counts = analyze_current_distribution(results_path)
     
     # Get suggestions
     suggested = suggest_boundary_adjustments(current_dist)
@@ -227,42 +229,54 @@ def interactive_tuner():
     print("2. Use ALTERNATIVE A (more aggressive)")
     print("3. Use ALTERNATIVE B (conservative)")
     print("4. Enter CUSTOM boundaries")
-    print("5. Keep CURRENT boundaries")
+    print("5. Keep CURRENT boundaries (TouchDesigner defaults)")
+    print("6. Load from existing config file")
     
-    choice = input("\nEnter choice (1-5): ").strip()
+    choice = input("\nEnter choice (1-6): ").strip()
     
     if choice == '1':
         boundaries = suggested
     elif choice == '2':
         boundaries = {
-            'boundary_01': 0.10,
-            'boundary_02': 1.0,
-            'boundary_03': 1.5,
-            'boundary_04': 2.0,
-            'boundary_05': 3.0
+            'decision_boundary_01': 0.05,
+            'decision_boundary_02': 1.4,
+            'decision_boundary_03': 1.7,
+            'decision_boundary_04': 2.0,
+            'decision_boundary_05': 4.0
         }
     elif choice == '3':
         boundaries = {
-            'boundary_01': 0.18,
-            'boundary_02': 0.8,
-            'boundary_03': 1.2,
-            'boundary_04': 2.0,
-            'boundary_05': 4.0
+            'decision_boundary_01': 0.08,
+            'decision_boundary_02': 1.3,
+            'decision_boundary_03': 1.6,
+            'decision_boundary_04': 1.9,
+            'decision_boundary_05': 5.0
         }
     elif choice == '4':
         boundaries = {}
         for i in range(1, 6):
-            key = f'boundary_0{i}'
+            key = f'decision_boundary_0{i}'
             default = suggested[key]
             val = input(f"Enter {key} (default {default:.2f}): ").strip()
             boundaries[key] = float(val) if val else default
+    elif choice == '6':
+        config_file = input("Enter config file path: ").strip()
+        try:
+            with open(config_file, 'r') as f:
+                loaded_config = json.load(f)
+            boundaries = {k: v for k, v in loaded_config.items() if k.startswith('decision_boundary')}
+            print(f"Loaded boundaries from {config_file}")
+        except Exception as e:
+            print(f"Error loading config: {e}")
+            boundaries = suggested
     else:
+        # Keep current TouchDesigner defaults
         boundaries = {
-            'boundary_01': 0.22,
-            'boundary_02': 0.7,
-            'boundary_03': 1.1,
-            'boundary_04': 2.2,
-            'boundary_05': 7.0
+            'decision_boundary_01': 0.22,
+            'decision_boundary_02': 0.7,
+            'decision_boundary_03': 1.1,
+            'decision_boundary_04': 2.2,
+            'decision_boundary_05': 7.0
         }
     
     # Generate config
@@ -276,9 +290,50 @@ def interactive_tuner():
     print("   python scripts/wave_type_reconstructor.py --max_files 10 --config configs/tuned_boundaries.json")
     print("\n2. If distribution looks good, run full dataset:")
     print("   python scripts/wave_type_reconstructor.py --config configs/tuned_boundaries.json")
-    print("\n3. Update TouchDesigner boundaries if needed:")
-    for key, val in boundaries.items():
-        print(f"   Set {key} to {val:.2f}")
+    print("\n3. Check results:")
+    print("   cat outputs_hybrid/wave_reconstruction_fixed.json")
+    print("\n4. If needed, run this tuner again to adjust boundaries")
+
+def analyze_results_and_suggest_adjustments():
+    """Analyze the latest results and suggest specific adjustments."""
+    
+    results_path = Path('outputs_hybrid/wave_reconstruction_fixed.json')
+    if not results_path.exists():
+        print("No results found. Run wave_type_reconstructor.py first.")
+        return
+    
+    with open(results_path, 'r') as f:
+        data = json.load(f)
+    
+    dist = data['wave_type_distribution']
+    
+    print("\n" + "="*60)
+    print("SPECIFIC ADJUSTMENT RECOMMENDATIONS")
+    print("="*60)
+    
+    # Analyze each wave type
+    adjustments = []
+    
+    if dist.get('still', 0) > 0.20:  # More than 20%
+        adjustments.append("• STILL too high: Lower decision_boundary_01 by 0.02-0.04")
+    elif dist.get('still', 0) < 0.10:  # Less than 10%
+        adjustments.append("• STILL too low: Raise decision_boundary_01 by 0.01-0.02")
+    
+    if dist.get('sine', 0) < 0.15:  # Less than 15%
+        adjustments.append("• SINE too low: Raise decision_boundary_02 by 0.1-0.2")
+    elif dist.get('sine', 0) > 0.25:  # More than 25%
+        adjustments.append("• SINE too high: Lower decision_boundary_02 by 0.1")
+    
+    if dist.get('random', 0) > 0.15:  # More than 15%
+        adjustments.append("• RANDOM too high: Raise decision_boundary_05 by 0.3-0.5")
+    elif dist.get('random', 0) < 0.05:  # Less than 5%
+        adjustments.append("• RANDOM too low: Lower decision_boundary_05 by 0.2-0.3")
+    
+    if adjustments:
+        for adj in adjustments:
+            print(adj)
+    else:
+        print("Distribution looks good! No major adjustments needed.")
 
 if __name__ == '__main__':
     import argparse
@@ -288,6 +343,8 @@ if __name__ == '__main__':
                        help='Only analyze current distribution')
     parser.add_argument('--suggest', action='store_true',
                        help='Only show suggestions')
+    parser.add_argument('--adjust', action='store_true',
+                       help='Analyze results and suggest specific adjustments')
     parser.add_argument('--interactive', action='store_true',
                        help='Run interactive tuner')
     
@@ -303,7 +360,12 @@ if __name__ == '__main__':
             current_dist = data['wave_type_distribution']
             suggest_boundary_adjustments(current_dist)
         else:
-            print("No results file found.")
+            print("No results file found. Using default distribution.")
+            suggest_boundary_adjustments({'still': 0.31, 'sine': 0.038, 'pwm_basic': 0.06, 
+                                         'pwm_extended': 0.113, 'odd_even': 0.275, 
+                                         'square': 0.011, 'random': 0.193})
+    elif args.adjust:
+        analyze_results_and_suggest_adjustments()
     else:
         # Default: run interactive tuner
         interactive_tuner()

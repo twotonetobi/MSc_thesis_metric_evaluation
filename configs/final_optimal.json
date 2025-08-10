@@ -5,10 +5,6 @@
   "virtual_led_count": 8,
   "fps": 30,
   "mode": "hard",
-  "bpm_thresholds": {
-    "low": 80,
-    "high": 135
-  },
   "optimization": {
     "alpha": 1.0,
     "beta": 1.0,
@@ -18,9 +14,13 @@
   "geo_phase_threshold": 0.15,
   "geo_freq_threshold": 0.15,
   "geo_offset_threshold": 0.15,
-  "boundary_01": 0.05,
-  "boundary_02": 1.4,
-  "boundary_03": 1.7,
-  "boundary_04": 2.0,
-  "boundary_05": 4.0
+  "decision_boundary_01": 0.06,
+  "decision_boundary_02": 1.85,
+  "decision_boundary_03": 2.15,
+  "decision_boundary_04": 2.35,
+  "decision_boundary_05": 3.65,
+  "bpm_thresholds": {
+    "low": 80,
+    "high": 108
+  }
 }

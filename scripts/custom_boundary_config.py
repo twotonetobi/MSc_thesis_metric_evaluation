@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-Custom Boundary Configuration Generator
+Custom Boundary Configuration Generator - FIXED VERSION
+Generates configs with correct decision_boundary_XX key names
 Targets: sine ~20%, random ~7%, square ~5%, less still
 """
 
@@ -15,6 +16,7 @@ def analyze_adjustments_needed():
     print("DISTRIBUTION ANALYSIS")
     print("="*60)
     
+    # These are hypothetical current distributions based on previous tests
     current = {
         'still': 31.0,
         'sine': 3.8,
@@ -32,7 +34,7 @@ def analyze_adjustments_needed():
         'pwm_extended': 15.0,  # Slight increase from 11.3%
         'odd_even': 25.0,   # Slight reduction from 27.5%
         'square': 5.0,      # Increase from 1.1%
-        'random': 7.0       # Reduce from 19.3%
+        'random': 10.0      # Reduce from 19.3%
     }
     
     print("\nCurrent → Target:")
@@ -50,25 +52,25 @@ def generate_custom_config():
     
     # Aggressive boundaries that gave us the current distribution
     aggressive = {
-        'boundary_01': 0.10,   # Controls still vs others
-        'boundary_02': 1.0,    # Controls sine vs pwm_basic
-        'boundary_03': 1.5,    # Controls pwm_basic vs pwm_extended
-        'boundary_04': 2.0,    # Controls pwm_extended vs odd_even
-        'boundary_05': 3.0     # Controls odd_even vs random/square
+        'decision_boundary_01': 0.10,   # Controls still vs others
+        'decision_boundary_02': 1.0,    # Controls sine vs pwm_basic
+        'decision_boundary_03': 1.5,    # Controls pwm_basic vs pwm_extended
+        'decision_boundary_04': 2.0,    # Controls pwm_extended vs odd_even
+        'decision_boundary_05': 3.0     # Controls odd_even vs random/square
     }
     
     # Custom boundaries to achieve target
     # Key insights:
     # - To increase sine from 3.8% to 20%: need MUCH higher boundary_02
-    # - To reduce random from 19.3% to 7%: need higher boundary_05
-    # - To reduce still from 31% to less: need lower boundary_01
+    # - To reduce random from 19.3% to 10%: need higher boundary_05
+    # - To reduce still from 31% to 15%: need lower boundary_01
     
     custom = {
-        'boundary_01': 0.05,   # Lower to reduce "still" (31% → 15%)
-        'boundary_02': 1.4,    # Much higher to increase "sine" (3.8% → 20%)
-        'boundary_03': 1.7,    # Slightly higher for more "pwm_basic"
-        'boundary_04': 2.0,    # Keep same
-        'boundary_05': 4.0     # Higher to reduce "random" (19.3% → 7%)
+        'decision_boundary_01': 0.05,   # Lower to reduce "still" (31% → 15%)
+        'decision_boundary_02': 1.4,    # Much higher to increase "sine" (3.8% → 20%)
+        'decision_boundary_03': 1.7,    # Slightly higher for more "pwm_basic"
+        'decision_boundary_04': 2.0,    # Keep same
+        'decision_boundary_05': 4.0     # Higher to reduce "random" (19.3% → 10%)
     }
     
     print("\n" + "="*60)
@@ -89,23 +91,23 @@ def generate_custom_config():
     # Alternative 1: More aggressive for sine
     print("\nOption A - Maximum Sine (if 20% sine is critical):")
     option_a = {
-        'boundary_01': 0.03,   # Very low for minimal still
-        'boundary_02': 1.6,    # Very high for maximum sine range
-        'boundary_03': 1.8,    # 
-        'boundary_04': 2.1,    # 
-        'boundary_05': 4.5     # Higher to minimize random
+        'decision_boundary_01': 0.03,   # Very low for minimal still
+        'decision_boundary_02': 1.6,    # Very high for maximum sine range
+        'decision_boundary_03': 1.8,    # 
+        'decision_boundary_04': 2.1,    # 
+        'decision_boundary_05': 4.5     # Higher to minimize random
     }
     for key, val in option_a.items():
         print(f"  {key}: {val:.2f}")
     
     # Alternative 2: Balanced with focus on reducing random
-    print("\nOption B - Minimal Random (if <7% random is critical):")
+    print("\nOption B - Minimal Random (if <10% random is critical):")
     option_b = {
-        'boundary_01': 0.08,   # 
-        'boundary_02': 1.3,    # 
-        'boundary_03': 1.6,    # 
-        'boundary_04': 1.9,    # 
-        'boundary_05': 5.0     # Very high to minimize random
+        'decision_boundary_01': 0.08,   # 
+        'decision_boundary_02': 1.3,    # 
+        'decision_boundary_03': 1.6,    # 
+        'decision_boundary_04': 1.9,    # 
+        'decision_boundary_05': 5.0     # Very high to minimize random
     }
     for key, val in option_b.items():
         print(f"  {key}: {val:.2f}")
@@ -113,11 +115,11 @@ def generate_custom_config():
     # Alternative 3: Fine-tuned based on dynamic score analysis
     print("\nOption C - Fine-tuned (recommended to try first):")
     option_c = {
-        'boundary_01': 0.06,   # Reduce still moderately
-        'boundary_02': 1.35,   # Increase sine significantly
-        'boundary_03': 1.65,   # Slight increase for pwm_basic
-        'boundary_04': 1.95,   # Slight reduction for odd_even
-        'boundary_05': 4.2     # Increase to reduce random to ~7%
+        'decision_boundary_01': 0.06,   # Reduce still moderately
+        'decision_boundary_02': 1.35,   # Increase sine significantly
+        'decision_boundary_03': 1.65,   # Slight increase for pwm_basic
+        'decision_boundary_04': 1.95,   # Slight reduction for odd_even
+        'decision_boundary_05': 4.2     # Increase to reduce random to ~10%
     }
     for key, val in option_c.items():
         print(f"  {key}: {val:.2f}")
@@ -125,7 +127,7 @@ def generate_custom_config():
     return custom, option_a, option_b, option_c
 
 def save_configs():
-    """Save all configuration options."""
+    """Save all configuration options with CORRECT key names."""
     
     custom, option_a, option_b, option_c = generate_custom_config()
     
@@ -165,15 +167,30 @@ def save_configs():
     
     for filename, boundaries in configs_to_save.items():
         config = base_config.copy()
-        # Add the boundary values to the config
+        # Add the boundary values to the config with CORRECT key names
         for key, value in boundaries.items():
-            config[key] = value
+            config[key] = value  # Keys already have "decision_" prefix
         
         output_path = configs_dir / filename
         with open(output_path, 'w') as f:
             json.dump(config, f, indent=2)
         
         print(f"\nSaved: {output_path}")
+    
+    # Also update the tuned_boundaries.json with correct keys
+    tuned_config = base_config.copy()
+    tuned_config.update({
+        "decision_boundary_01": 0.1,
+        "decision_boundary_02": 1.0,
+        "decision_boundary_03": 1.5,
+        "decision_boundary_04": 2.0,
+        "decision_boundary_05": 3.0
+    })
+    
+    tuned_path = configs_dir / 'tuned_boundaries.json'
+    with open(tuned_path, 'w') as f:
+        json.dump(tuned_config, f, indent=2)
+    print(f"\nSaved: {tuned_path}")
     
     print("\n" + "="*60)
     print("TESTING RECOMMENDATIONS")
@@ -198,13 +215,13 @@ def save_configs():
     print("\nTo achieve your targets:")
     print("• SINE 20%: The dynamic range 1.0-1.35 was only 3.8% of decisions")
     print("  → Need to expand this range significantly (up to 1.6)")
-    print("• RANDOM 7%: Dynamic > 3.0 was 19.3% of decisions")
+    print("• RANDOM 10%: Dynamic > 3.0 was 19.3% of decisions")
     print("  → Need to raise threshold to 4.0-4.5")
-    print("• STILL less: Intensity < 0.10 was 31% of decisions")
+    print("• STILL 15%: Intensity < 0.10 was 31% of decisions")
     print("  → Need to lower threshold to 0.05-0.06")
     
     print("\nNote about SQUARE vs RANDOM:")
-    print("• Both occur when dynamic > boundary_05")
+    print("• Both occur when dynamic > decision_boundary_05")
     print("• Decision between them is based on BPM > 135")
     print("• To get more square: Could lower BPM threshold in config")
     
@@ -235,7 +252,13 @@ if __name__ == '__main__':
     print("="*60)
     
     print("\nIf after testing you need quick adjustments:")
-    print("• Too much STILL: Lower boundary_01 by 0.02")
-    print("• Too little SINE: Raise boundary_02 by 0.1") 
-    print("• Too much RANDOM: Raise boundary_05 by 0.3")
+    print("• Too much STILL: Lower decision_boundary_01 by 0.02")
+    print("• Too little SINE: Raise decision_boundary_02 by 0.1") 
+    print("• Too much RANDOM: Raise decision_boundary_05 by 0.3")
     print("• Too little SQUARE: Lower bpm_thresholds['high'] to 120")
+    
+    print("\n" + "="*60)
+    print("CONFIG FILES FIXED!")
+    print("="*60)
+    print("\nAll config files now use correct 'decision_boundary_XX' key names.")
+    print("The wave_type_reconstructor.py should now work without KeyError.")
