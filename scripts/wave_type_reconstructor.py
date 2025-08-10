@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-Wave Type Reconstructor Module
-Phase 1 of Hybrid Evaluation Framework Implementation
+Wave Type Reconstructor Module - FIXED VERSION
+With correct decision boundaries and PAS mapping from TouchDesigner
 
 This module reconstructs actual wave type decisions by combining:
 - PAS (intention-based) data: 72 dimensions (12 groups × 6 params)
@@ -19,7 +19,7 @@ from scipy.signal import find_peaks
 from typing import Dict, List, Tuple, Optional
 
 # ============================================================================
-# CONFIGURATION
+# CONFIGURATION - FIXED WITH ACTUAL TOUCHDESIGNER VALUES
 # ============================================================================
 
 CONFIG = {
@@ -42,31 +42,32 @@ CONFIG = {
     "geo_phase_threshold": 0.15,
     "geo_freq_threshold": 0.15,
     "geo_offset_threshold": 0.15,
-    # Decision boundaries
-    "decision_boundary_01": 0.1,
-    "decision_boundary_02": 0.3,
-    "decision_boundary_03": 0.5,
-    "decision_boundary_04": 0.7,
-    "decision_boundary_05": 0.9
+    # FIXED: Using actual TouchDesigner decision boundaries
+    "decision_boundary_01": 0.22,   # was 0.1
+    "decision_boundary_02": 0.7,    # was 0.3
+    "decision_boundary_03": 1.1,    # was 0.5
+    "decision_boundary_04": 2.2,    # was 0.7
+    "decision_boundary_05": 7.0     # was 0.9 - THIS IS THE KEY FIX!
 }
 
+# FIXED: Correct PAS to Oscillator mapping based on your TouchDesigner setup
 GROUP_MAPPING_CONFIG = {
     'default': {
         # PAS groups -> Oscillator group mapping
         'oscillator_group_0': {
-            'pas_groups': [0, 1, 2],      # PAS groups 1-3 (indices 0-2)
-            'default_pas': 2,              # Use group 3 (index 2) as default
-            'description': 'Front/main lighting'
+            'pas_groups': [1],  # Intention group 2 (index 1)
+            'default_pas': 1,   # Use group 2 (index 1)
+            'description': 'Front/main lighting (LX1)'
         },
         'oscillator_group_1': {
-            'pas_groups': [3, 4, 5],      # PAS groups 4-6 (indices 3-5)
-            'default_pas': 4,              # Use group 5 (index 4) as default
-            'description': 'Side/fill lighting'
+            'pas_groups': [4],  # Intention group 5 (index 4)
+            'default_pas': 4,   # Use group 5 (index 4)
+            'description': 'Side/fill lighting (LX2)'
         },
         'oscillator_group_2': {
-            'pas_groups': [6, 7, 8, 9, 10, 11],   # PAS groups 7-12 (indices 6-11)
-            'default_pas': 7,              # Use group 8 (index 7) as default
-            'description': 'Back/effect lighting'
+            'pas_groups': [7],  # Intention group 8 (index 7)
+            'default_pas': 7,   # Use group 8 (index 7)
+            'description': 'Back/effect lighting (LX3)'
         }
     }
 }
@@ -78,6 +79,7 @@ GROUP_MAPPING_CONFIG = {
 def select_waveform_for_segment(luminaire_dict: Dict, config: Dict) -> Tuple[str, float]:
     """
     Extended decision function that uses both PAS and Geo approach parameters.
+    Matches TouchDesigner's select_waveform_for_segment logic.
     
     Returns:
         Tuple of (decision, overall_dynamic_score)
@@ -90,6 +92,7 @@ def select_waveform_for_segment(luminaire_dict: Dict, config: Dict) -> Tuple[str
     intensityInverseMinimaPAS = PAS_all[:, 3]
     
     # Count peaks in PAS intensity as a measure of oscillation
+    # KEEPING height=0.6 as you confirmed it works well
     peaks, _ = find_peaks(intensityPeakPAS, height=0.6)
     oscillation_count = len(peaks)
     
@@ -155,13 +158,13 @@ def select_waveform_for_segment(luminaire_dict: Dict, config: Dict) -> Tuple[str
     overall_dynamic = (overall_geo_dynamic + pas_dynamic_score) / 2.0
 
     # ---------------------------
-    # Decision Rules:
+    # Decision Rules with CORRECT boundaries:
     # ---------------------------
-    decision_boundary_01 = config.get('decision_boundary_01', 0.1)
-    decision_boundary_02 = config.get('decision_boundary_02', 0.3)
-    decision_boundary_03 = config.get('decision_boundary_03', 0.5)
-    decision_boundary_04 = config.get('decision_boundary_04', 0.7)
-    decision_boundary_05 = config.get('decision_boundary_05', 0.9)
+    decision_boundary_01 = config.get('decision_boundary_01', 0.22)
+    decision_boundary_02 = config.get('decision_boundary_02', 0.7)
+    decision_boundary_03 = config.get('decision_boundary_03', 1.1)
+    decision_boundary_04 = config.get('decision_boundary_04', 2.2)
+    decision_boundary_05 = config.get('decision_boundary_05', 7.0)
     
     decision = None
     if intensity_range < decision_boundary_01:
@@ -176,11 +179,19 @@ def select_waveform_for_segment(luminaire_dict: Dict, config: Dict) -> Tuple[str
         elif overall_dynamic < decision_boundary_05:
             decision = "odd_even"
         else:
-            # For very high overall dynamics
+            # For very high overall dynamics (>7.0 - rare!)
             if bpm > config['bpm_thresholds']['high']:
                 decision = "square"
             else:
                 decision = "random"
+    
+    # Debug output to understand the decision
+    print(f"    Decision: {decision}")
+    print(f"      Intensity range: {intensity_range:.3f} (boundary: {decision_boundary_01})")
+    print(f"      Overall dynamic: {overall_dynamic:.3f}")
+    print(f"      - PAS dynamic: {pas_dynamic_score:.3f} (peaks: {oscillation_count})")
+    print(f"      - Geo dynamic: {overall_geo_dynamic:.3f}")
+    print(f"      Boundaries: [{decision_boundary_01}, {decision_boundary_02}, {decision_boundary_03}, {decision_boundary_04}, {decision_boundary_05}]")
     
     return decision, overall_dynamic
 
@@ -210,8 +221,13 @@ class WaveTypeReconstructor:
         self.verbose = verbose
         
         if self.verbose:
-            print("Wave Type Reconstructor initialized")
-            print(f"  Group mapping: {self.group_mapping.keys()}")
+            print("="*60)
+            print("Wave Type Reconstructor initialized (FIXED VERSION)")
+            print("="*60)
+            print(f"Decision boundaries: {[self.config[f'decision_boundary_0{i}'] for i in range(1,6)]}")
+            print(f"Group mapping:")
+            for key, val in self.group_mapping.items():
+                print(f"  {key}: PAS group {val['default_pas']+1} (index {val['default_pas']})")
     
     def load_pas_data(self, pas_file: Path) -> np.ndarray:
         """
@@ -273,7 +289,7 @@ class WaveTypeReconstructor:
         Returns:
             PAS data for the mapped group (frames, 6)
         """
-        # Get the default PAS group for this oscillator group
+        # Get the PAS group for this oscillator group
         mapping_key = f'oscillator_group_{oscillator_group_idx}'
         if mapping_key not in self.group_mapping:
             raise ValueError(f"No mapping found for {mapping_key}")
@@ -374,6 +390,7 @@ class WaveTypeReconstructor:
         """
         if self.verbose:
             print(f"\nReconstructing: {pas_file.stem}")
+            print("-"*60)
         
         # Load data
         pas_data = self.load_pas_data(pas_file)
@@ -396,7 +413,7 @@ class WaveTypeReconstructor:
         results = []
         for group_idx in range(3):
             if self.verbose:
-                print(f"  Processing oscillator group {group_idx}:")
+                print(f"\n  Processing oscillator group {group_idx}:")
             
             # Extract metrics using group mapping
             pas_metrics = self.extract_pas_metrics_for_group(pas_data, group_idx)
@@ -423,15 +440,13 @@ class WaveTypeReconstructor:
                 'frames': min_frames
             }
             
-            if self.verbose:
-                print(f"    Decision: {decision}, Dynamic: {dynamic_score:.3f}, Intensity: {intensity_range:.3f}")
-            
             results.append(result)
         
         return results
     
     def reconstruct_dataset(self, pas_dir: Path, geo_dir: Path, 
-                           audio_dir: Optional[Path] = None) -> Dict:
+                           audio_dir: Optional[Path] = None,
+                           max_files: Optional[int] = None) -> Dict:
         """
         Reconstruct wave types for an entire dataset.
         
@@ -439,6 +454,7 @@ class WaveTypeReconstructor:
             pas_dir: Directory with PAS pickle files
             geo_dir: Directory with Geo pickle files
             audio_dir: Optional directory with audio JSON files
+            max_files: Maximum number of files to process (for testing)
             
         Returns:
             Dictionary with all reconstruction results
@@ -451,7 +467,9 @@ class WaveTypeReconstructor:
         
         # Find matching files
         pas_files = sorted(pas_dir.glob('*.pkl'))
-        print(f"  Found {len(pas_files)} PAS files")
+        if max_files:
+            pas_files = pas_files[:max_files]
+        print(f"  Processing {len(pas_files)} PAS files")
         
         all_results = []
         wave_type_counts = {}
@@ -472,10 +490,16 @@ class WaveTypeReconstructor:
             # Load audio info if available
             audio_info = None
             if audio_dir:
-                audio_file = audio_dir / f"{pas_file.stem}.json"
-                if audio_file.exists():
-                    with open(audio_file, 'r') as f:
-                        audio_info = json.load(f)
+                # Try different naming patterns
+                audio_candidates = [
+                    audio_dir / f"{pas_file.stem}.json",
+                    audio_dir / f"{pas_file.stem.split('_seed')[0]}.json"
+                ]
+                for audio_file in audio_candidates:
+                    if audio_file.exists():
+                        with open(audio_file, 'r') as f:
+                            audio_info = json.load(f)
+                        break
             
             # Reconstruct wave types
             file_results = self.reconstruct_single_file(pas_file, geo_file, audio_info)
@@ -499,13 +523,16 @@ class WaveTypeReconstructor:
             for wt, count in wave_type_counts.items()
         }
         
-        print(f"\n  Wave Type Distribution:")
+        print(f"\n{'='*60}")
+        print(f"FINAL Wave Type Distribution:")
+        print(f"{'='*60}")
         for wt, pct in sorted(wave_type_distribution.items(), key=lambda x: -x[1]):
-            print(f"    {wt}: {pct*100:.1f}%")
+            print(f"  {wt:15s}: {pct*100:5.1f}% ({wave_type_counts[wt]} occurrences)")
         
         return {
             'files': all_results,
             'wave_type_distribution': wave_type_distribution,
+            'wave_type_counts': wave_type_counts,
             'total_files': len(all_results),
             'total_decisions': total_decisions
         }
@@ -516,7 +543,7 @@ class WaveTypeReconstructor:
 # ============================================================================
 
 def main():
-    """Test the wave type reconstructor with sample data."""
+    """Test the wave type reconstructor with corrected parameters."""
     import argparse
     
     parser = argparse.ArgumentParser(description='Reconstruct wave type decisions')
@@ -531,14 +558,26 @@ def main():
                        help='Directory with audio information JSONs')
     parser.add_argument('--single_file', type=str,
                        help='Process single file (stem name) for testing')
+    parser.add_argument('--max_files', type=int,
+                       help='Maximum number of files to process (for testing)')
     parser.add_argument('--output', type=str,
-                       default='outputs_hybrid/wave_reconstruction.pkl',
+                       default='outputs_hybrid/wave_reconstruction_fixed.pkl',
                        help='Output file for results')
+    parser.add_argument('--config', type=str,
+                       help='Path to custom config JSON file with boundaries')
     
     args = parser.parse_args()
     
-    # Initialize reconstructor
-    reconstructor = WaveTypeReconstructor(verbose=True)
+    # Load custom config if provided
+    config = CONFIG  # Default
+    if args.config:
+        print(f"Loading custom config from: {args.config}")
+        with open(args.config, 'r') as f:
+            config = json.load(f)
+        print(f"Custom boundaries loaded: [{config['decision_boundary_01']}, {config['decision_boundary_02']}, {config['decision_boundary_03']}, {config['decision_boundary_04']}, {config['decision_boundary_05']}]")
+    
+    # Initialize reconstructor with config
+    reconstructor = WaveTypeReconstructor(config=config, verbose=True)
     
     if args.single_file:
         # Test with single file
@@ -564,17 +603,20 @@ def main():
             pas_file, geo_file, audio_info
         )
         
-        print("\nReconstruction Results:")
+        print("\n" + "="*60)
+        print("Single File Reconstruction Results:")
+        print("="*60)
         for r in results:
-            print(f"  Group {r['group_idx']}: {r['decision']} "
-                  f"(dynamic={r['dynamic_score']:.3f})")
+            print(f"  Group {r['group_idx']}: {r['decision']:15s} "
+                  f"(dynamic={r['dynamic_score']:.3f}, intensity={r['intensity_range']:.3f})")
     
     else:
         # Process entire dataset
         results = reconstructor.reconstruct_dataset(
             Path(args.pas_dir),
             Path(args.geo_dir),
-            Path(args.audio_dir) if args.audio_dir else None
+            Path(args.audio_dir) if args.audio_dir else None,
+            max_files=args.max_files
         )
         
         # Save results
@@ -591,6 +633,7 @@ def main():
         # Convert for JSON serialization
         json_results = {
             'wave_type_distribution': results['wave_type_distribution'],
+            'wave_type_counts': results['wave_type_counts'],
             'total_files': results['total_files'],
             'total_decisions': results['total_decisions']
         }
