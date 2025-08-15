@@ -1,14 +1,16 @@
-# Core Scientific Computing
-numpy>=1.21.0,<2.0.0
-scipy>=1.7.0
-pandas>=1.3.0
+# Core Scientific Computing - NumPy 2.x Compatible Versions
+numpy>=2.0.0
+scipy>=1.11.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
 
-# Visualization
-matplotlib>=3.4.0
-seaborn>=0.11.0
+# Visualization - Updated for NumPy 2.x compatibility
+matplotlib>=3.8.0
+seaborn>=0.13.0
 
-# Audio Processing
-librosa>=0.9.0
+# Audio Processing - NumPy 2.x compatible
+librosa>=0.10.0
+pyarrow>=14.0.0
 
 # Music Information Retrieval Evaluation
 mir_eval>=0.7
@@ -17,8 +19,16 @@ mir_eval>=0.7
 # Note: tkinter is usually included with Python
 
 # Optional but recommended
-ipython>=7.0.0
+ipython>=8.0.0
 jupyter>=1.0.0
+notebook>=7.0.0
 
 # For better progress bars (optional)
 tqdm>=4.62.0
+
+# Additional packages for NumPy 2.x compatibility
+numexpr>=2.10.0
+bottleneck>=1.4.0
+
+# Additional dependencies for thesis workflow  
+pathlib2>=2.3.0; python_version<"3.4"
